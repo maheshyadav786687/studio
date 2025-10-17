@@ -6,8 +6,8 @@ import { RecentUpdates } from '@/components/dashboard/recent-updates';
 export default function DashboardPage() {
   return (
     <div className="flex-1 space-y-4">
-        <div className="flex-1">
-          <h1 className="font-headline text-3xl font-bold tracking-tight">Dashboard</h1>
+        <div>
+          <h1 className="font-headline text-4xl font-bold tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground">An overview of your projects and contractors.</p>
         </div>
         <StatsCards />
