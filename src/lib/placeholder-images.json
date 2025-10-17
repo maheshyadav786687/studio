@@ -1,3 +1,52 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "avatar1",
+      "description": "Avatar for Anjali Sharma",
+      "imageUrl": "https://picsum.photos/seed/avatar1/100/100",
+      "imageHint": "woman portrait"
+    },
+    {
+      "id": "avatar2",
+      "description": "Avatar for Rohan Verma",
+      "imageUrl": "https://picsum.photos/seed/avatar2/100/100",
+      "imageHint": "man portrait"
+    },
+    {
+      "id": "avatar3",
+      "description": "Avatar for Priya Patel",
+      "imageUrl": "https://picsum.photos/seed/avatar3/100/100",
+      "imageHint": "woman smiling"
+    },
+    {
+      "id": "avatar4",
+      "description": "Avatar for Sameer Khan",
+      "imageUrl": "https://picsum.photos/seed/avatar4/100/100",
+      "imageHint": "man professional"
+    },
+    {
+      "id": "project1",
+      "description": "Corporate Website Redesign Project Image",
+      "imageUrl": "https://picsum.photos/seed/project1/600/400",
+      "imageHint": "office building"
+    },
+    {
+      "id": "project2",
+      "description": "Mobile App Development Project Image",
+      "imageUrl": "https://picsum.photos/seed/project2/600/400",
+      "imageHint": "mobile phone"
+    },
+    {
+      "id": "project3",
+      "description": "E-commerce Platform Project Image",
+      "imageUrl": "https://picsum.photos/seed/project3/600/400",
+      "imageHint": "online shopping"
+    },
+    {
+      "id": "login-bg",
+      "description": "Login page background image",
+      "imageUrl": "https://picsum.photos/seed/loginbg/1920/1080",
+      "imageHint": "modern architecture"
+    }
+  ]
 }
