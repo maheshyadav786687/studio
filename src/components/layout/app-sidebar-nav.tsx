@@ -33,7 +33,7 @@ export function AppSidebarNav() {
         </Link>
       </div>
       <div className="flex-1">
-        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2">
+        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
           {navItems.map(({ href, icon: Icon, label, badge }) => (
             <Link
               key={label}
