@@ -20,7 +20,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
     const progress = totalTasks > 0 ? (tasksCompleted / totalTasks) * 100 : 0;
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <ProjectHeader project={project} />
 
             <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-3">

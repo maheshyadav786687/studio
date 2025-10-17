@@ -13,10 +13,10 @@ import { ContractorDialog } from "@/components/contractors/contractor-dialog"
 
 export default function ContractorsPage() {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-8">
       <div className="flex items-center">
         <div className="flex-1">
-          <h1 className="font-headline text-2xl font-bold tracking-tight">Contractors</h1>
+          <h1 className="font-headline text-4xl font-bold tracking-tight">Contractors</h1>
           <p className="text-muted-foreground">Manage your team of skilled contractors.</p>
         </div>
         <div className="ml-auto flex items-center gap-2">

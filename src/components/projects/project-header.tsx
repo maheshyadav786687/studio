@@ -20,7 +20,7 @@ export function ProjectHeader({ project }: ProjectHeaderProps) {
                     >
                         {project.status}
                     </Badge>
-                    <h1 className="font-headline text-3xl font-bold tracking-tight mt-2">{project.name}</h1>
+                    <h1 className="font-headline text-4xl font-bold tracking-tight mt-2">{project.name}</h1>
                     <p className="text-muted-foreground mt-1 max-w-3xl">{project.description}</p>
                 </div>
                 <div className="flex items-center gap-4 text-sm text-muted-foreground bg-muted p-3 rounded-lg">
