@@ -30,14 +30,14 @@ const navItems = [
   { href: '/admin/subtasks', icon: ClipboardList, label: 'Sub-tasks' },
   { href: '/admin/sites', icon: Building2, label: 'Sites' },
   { href: '/admin/clients', icon: User, label: 'Clients' },
+  { href: '/admin/contractors', icon: Users, label: 'Contractors' },
+  { href: '/admin/worker', icon: HardHat, label: 'Worker' },
   { href: '/admin/quotations', icon: FileText, label: 'Quotations' },
   { href: '/admin/requests', icon: GitPullRequest, label: 'Requests' },
   { href: '/admin/issue', icon: AlertCircle, label: 'Issue' },
-  { href: '/admin/worker', icon: HardHat, label: 'Worker' },
   { href: '/admin/attendance', icon: CalendarCheck, label: 'Attendance' },
   { href: '/admin/advance-salary', icon: Wallet, label: 'Advance Salary' },
   { href: '/admin/salary', icon: Landmark, label: 'Salary' },
-  { href: '/admin/contractors', icon: Users, label: 'Contractors' },
   { href: '/admin/reports', icon: BarChart3, label: 'Reports' },
 ];
 
