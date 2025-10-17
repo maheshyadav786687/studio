@@ -35,10 +35,11 @@ import {
   KeyRound
 } from 'lucide-react';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 import { cn } from '@/lib/utils';
 
@@ -65,11 +66,11 @@ const navItems = [
     icon: Briefcase,
     subItems: [
         { href: '/admin/projects', icon: Briefcase, label: 'Projects' },
-        { href: '#', label: 'Tasks' },
-        { href: '#', label: 'Subtasks' },
-        { href: '#', label: 'Daily Updates' },
-        { href: '#', label: 'Attachments' },
-        { href: '#', label: 'Issues' },
+        { href: '#', icon: ClipboardList, label: 'Tasks' },
+        { href: '#', icon: CheckCircle, label: 'Subtasks' },
+        { href: '#', icon: FileText, label: 'Daily Updates' },
+        { href: '#', icon: File, label: 'Attachments' },
+        { href: '#', icon: AlertCircle, label: 'Issues' },
     ]
   },
   {
@@ -77,7 +78,7 @@ const navItems = [
     icon: Users,
     subItems: [
         { href: '#', icon: HardHat, label: 'Workers' },
-        { href: '#', icon: Users, label: 'Subcontractors' },
+        { href: '/admin/contractors', icon: Users, label: 'Subcontractors' },
         { href: '#', icon: CalendarCheck, label: 'Attendance' },
         { 
             label: 'Payroll & Salary', 
@@ -92,7 +93,7 @@ const navItems = [
     ]
   },
    {
-    label: 'Materials & Logistics',
+    label: 'Materials, Suppliers & Logistics',
     icon: Package,
     subItems: [
         { href: '#', icon: Users, label: 'Suppliers / Vendors' },
@@ -123,7 +124,7 @@ const navItems = [
   },
   { href: '#', icon: BarChart3, label: 'Reports & Analytics' },
   {
-    label: 'System Configuration',
+    label: 'Master / System Configuration',
     icon: Settings,
     subItems: [
         { href: '#', icon: Settings, label: 'Company Settings' },
@@ -147,35 +148,61 @@ type NavItem = {
 type NavLinkProps = {
   item: NavItem;
   pathname: string;
+  isSubItem?: boolean;
 };
 
-const NavLink = ({ item, pathname }: NavLinkProps) => {
+const NavLink = ({ item, pathname, isSubItem = false }: NavLinkProps) => {
   const { href, icon: Icon, label, subItems } = item;
-  const isParentActive = subItems?.some(sub => pathname.startsWith(sub.href || ''));
+  const isParentActive = subItems?.some(sub => sub.href && pathname.startsWith(sub.href)) || 
+                         subItems?.some(sub => sub.subItems?.some(s => s.href && pathname.startsWith(s.href)));
+
 
   if (subItems) {
+    const content = (
+      <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
+          {subItems.map((subItem) => (
+              <NavLink key={subItem.label} item={subItem} pathname={pathname} isSubItem={true} />
+          ))}
+      </nav>
+    );
+
+    if (isSubItem) {
+        return (
+            <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value={label} className="border-b-0">
+                    <AccordionTrigger className={cn(
+                        'flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline',
+                        isParentActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : '',
+                        'w-full justify-between'
+                    )}>
+                        <div className="flex items-center gap-3">
+                           {Icon && <Icon className="h-4 w-4" />}
+                           <span>{label}</span>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pl-4 pb-0">
+                        {content}
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+        );
+    }
+
     return (
-      <Collapsible defaultOpen={isParentActive}>
-        <CollapsibleTrigger className="w-full">
-          <div
-            className={cn(
-              'flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-               isParentActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            <span className="flex-1 text-left">{label}</span>
-            <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-          </div>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="pl-4">
-            <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
-                {subItems.map((subItem) => (
-                    <NavLink key={subItem.label} item={subItem} pathname={pathname} />
-                ))}
-            </nav>
-        </CollapsibleContent>
-      </Collapsible>
+        <AccordionItem value={label} className="border-b-0">
+            <AccordionTrigger className={cn(
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline',
+                isParentActive ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
+            )}>
+                 <div className="flex items-center gap-3">
+                    <Icon className="h-4 w-4" />
+                    <span className="flex-1 text-left">{label}</span>
+                 </div>
+            </AccordionTrigger>
+            <AccordionContent className="pl-4 pb-0">
+                {content}
+            </AccordionContent>
+        </AccordionItem>
     );
   }
 
@@ -184,7 +211,7 @@ const NavLink = ({ item, pathname }: NavLinkProps) => {
       href={href || '#'}
       className={cn(
         'flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-        pathname.startsWith(href || 'non-existent') ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
+        pathname === href ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
       )}
     >
       {Icon && <Icon className="h-4 w-4" />}
@@ -196,6 +223,7 @@ const NavLink = ({ item, pathname }: NavLinkProps) => {
 
 export function AppSidebarNav() {
   const pathname = usePathname();
+  const activeParent = navItems.find(item => item.subItems?.some(sub => sub.href && pathname.startsWith(sub.href)) || item.subItems?.some(sub => sub.subItems?.some(s => s.href && pathname.startsWith(s.href))));
 
   return (
     <div className="flex h-full max-h-screen flex-col gap-2 bg-sidebar text-sidebar-foreground">
@@ -206,11 +234,27 @@ export function AppSidebarNav() {
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
-          {navItems.map((item) => (
-            <NavLink key={item.label} item={item as NavItem} pathname={pathname} />
-          ))}
-        </nav>
+        <Accordion type="single" collapsible className="w-full px-2 lg:px-4 py-2 space-y-1" defaultValue={activeParent?.label}>
+           {navItems.map((item) => {
+              if (item.subItems) {
+                return <NavLink key={item.label} item={item as NavItem} pathname={pathname} />;
+              }
+              return (
+                 <div key={item.label} className="px-3">
+                    <Link
+                        href={item.href || '#'}
+                        className={cn(
+                            'flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                            pathname === item.href ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
+                        )}
+                        >
+                        {item.icon && <item.icon className="h-4 w-4" />}
+                        {item.label}
+                    </Link>
+                 </div>
+              )
+           })}
+        </Accordion>
       </div>
     </div>
   );
