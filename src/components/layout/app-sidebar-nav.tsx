@@ -46,7 +46,7 @@ import { cn } from '@/lib/utils';
 const navItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { 
-    label: 'Clients, Sites & Quotations', 
+    label: 'Clients & Sites', 
     icon: Building,
     subItems: [
       { href: '#', icon: User, label: 'Clients' },
@@ -74,7 +74,7 @@ const navItems = [
     ]
   },
   {
-    label: 'Workforce & Labor',
+    label: 'Workforce',
     icon: Users,
     subItems: [
         { href: '#', icon: HardHat, label: 'Workers' },
@@ -93,7 +93,7 @@ const navItems = [
     ]
   },
    {
-    label: 'Materials, Suppliers & Logistics',
+    label: 'Materials & Suppliers',
     icon: Package,
     subItems: [
         { href: '#', icon: Users, label: 'Suppliers / Vendors' },
