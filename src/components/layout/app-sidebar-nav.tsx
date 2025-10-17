@@ -25,8 +25,8 @@ export function AppSidebarNav() {
   const pathname = usePathname();
 
   return (
-    <div className="flex h-full max-h-screen flex-col gap-2 bg-primary text-primary-foreground">
-      <div className="flex h-14 items-center border-b border-primary-foreground/10 px-4 lg:h-[60px] lg:px-6">
+    <div className="flex h-full max-h-screen flex-col gap-2 bg-sidebar text-sidebar-foreground">
+      <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
         <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
           <GanttChartSquare className="h-6 w-6" />
           <span>ContractorBabu</span>
@@ -39,14 +39,14 @@ export function AppSidebarNav() {
               key={label}
               href={href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-primary-foreground/10',
-                pathname.startsWith(href) ? 'bg-primary-foreground/20' : ''
+                'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-sidebar-accent',
+                pathname.startsWith(href) ? 'bg-sidebar-accent' : ''
               )}
             >
               <Icon className="h-4 w-4" />
               {label}
               {badge && (
-                <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent text-accent-foreground">
+                <Badge className="ml-auto flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                   {badge}
                 </Badge>
               )}
@@ -55,7 +55,7 @@ export function AppSidebarNav() {
         </nav>
       </div>
       <div className="mt-auto p-4">
-        <Button size="sm" className="w-full justify-start gap-3 bg-primary-foreground/10 hover:bg-primary-foreground/20">
+        <Button size="sm" className="w-full justify-start gap-3 bg-sidebar-accent hover:bg-sidebar-accent/80">
           <Settings className="h-4 w-4" />
           Settings
         </Button>
