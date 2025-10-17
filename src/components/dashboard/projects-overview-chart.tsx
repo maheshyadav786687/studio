@@ -53,7 +53,7 @@ export function ProjectsOverviewChart() {
                     borderColor: 'hsl(var(--border))'
                 }}
              />
-            <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="total" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
