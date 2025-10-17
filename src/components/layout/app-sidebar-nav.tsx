@@ -27,7 +27,7 @@ export function AppSidebarNav() {
   return (
     <div className="flex h-full max-h-screen flex-col gap-2 bg-sidebar text-sidebar-foreground">
       <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-primary">
+        <Link href="/" className="flex items-center gap-2 font-headline font-semibold text-primary">
           <GanttChartSquare className="h-6 w-6" />
           <span>ContractorBabu</span>
         </Link>
@@ -39,7 +39,7 @@ export function AppSidebarNav() {
               key={label}
               href={href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                'flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
                 pathname.startsWith(href) ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
               )}
             >
