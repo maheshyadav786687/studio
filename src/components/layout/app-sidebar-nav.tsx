@@ -29,7 +29,7 @@ export function AppSidebarNav() {
       <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
         <Link href="/" className="flex items-center gap-2 font-headline font-semibold text-primary">
           <GanttChartSquare className="h-6 w-6" />
-          <span>ContractorBabu</span>
+          <span className="text-lg">ContractorBabu</span>
         </Link>
       </div>
       <div className="flex-1">
