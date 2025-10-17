@@ -7,6 +7,17 @@ import {
   LayoutDashboard,
   Users,
   BarChart3,
+  Building2,
+  FileText,
+  CheckCircle,
+  ClipboardList,
+  AlertCircle,
+  HardHat,
+  CalendarCheck,
+  Wallet,
+  Landmark,
+  User,
+  GitPullRequest
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -14,7 +25,18 @@ import { Badge } from '@/components/ui/badge';
 
 const navItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { href: '/admin/clients', icon: User, label: 'Clients' },
+  { href: '/admin/sites', icon: Building2, label: 'Sites' },
+  { href: '/admin/quotations', icon: FileText, label: 'Quotations' },
   { href: '/admin/projects', icon: Briefcase, label: 'Projects', badge: '3' },
+  { href: '/admin/tasks', icon: CheckCircle, label: 'Tasks' },
+  { href: '/admin/subtasks', icon: ClipboardList, label: 'Sub-tasks' },
+  { href: '/admin/requests', icon: GitPullRequest, label: 'Requests' },
+  { href: '/admin/issue', icon: AlertCircle, label: 'Issue' },
+  { href: '/admin/worker', icon: HardHat, label: 'Worker' },
+  { href: '/admin/attendance', icon: CalendarCheck, label: 'Attendance' },
+  { href: '/admin/advance-salary', icon: Wallet, label: 'Advance Salary' },
+  { href: '/admin/salary', icon: Landmark, label: 'Salary' },
   { href: '/admin/contractors', icon: Users, label: 'Contractors' },
   { href: '/admin/reports', icon: BarChart3, label: 'Reports' },
 ];
