@@ -13,7 +13,7 @@ export default function AdminLayout({
       </aside>
       <div className="flex flex-col">
         <AppHeader />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-8 lg:p-8">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-8 lg:p-8 mt-4">
           {children}
         </main>
       </div>
