@@ -7,12 +7,10 @@ import {
   LayoutDashboard,
   Users,
   BarChart3,
-  Settings,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 
 const navItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -27,7 +25,7 @@ export function AppSidebarNav() {
   return (
     <div className="flex h-full max-h-screen flex-col gap-2 bg-sidebar text-sidebar-foreground">
       <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
-        <Link href="/" className="flex items-center gap-2 font-headline font-semibold text-primary">
+        <Link href="/" className="flex items-center gap-2 font-headline font-bold text-primary">
           <GanttChartSquare className="h-6 w-6" />
           <span className="text-lg">ContractorBabu</span>
         </Link>
