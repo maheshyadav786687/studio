@@ -54,12 +54,6 @@ export function AppSidebarNav() {
           ))}
         </nav>
       </div>
-      <div className="mt-auto p-4">
-        <Button size="sm" variant="ghost" className="w-full justify-start gap-3">
-          <Settings className="h-4 w-4" />
-          Settings
-        </Button>
-      </div>
     </div>
   );
 }
