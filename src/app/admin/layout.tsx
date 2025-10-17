@@ -13,7 +13,7 @@ export default function AdminLayout({
       </aside>
       <div className="flex flex-col">
         <AppHeader />
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-gradient-to-br from-background to-primary/10">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-gradient-to-r from-background to-primary/10">
           {children}
         </main>
       </div>
