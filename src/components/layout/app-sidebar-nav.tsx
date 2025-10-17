@@ -25,12 +25,12 @@ import { Badge } from '@/components/ui/badge';
 
 const navItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/admin/clients', icon: User, label: 'Clients' },
-  { href: '/admin/sites', icon: Building2, label: 'Sites' },
-  { href: '/admin/quotations', icon: FileText, label: 'Quotations' },
   { href: '/admin/projects', icon: Briefcase, label: 'Projects', badge: '3' },
   { href: '/admin/tasks', icon: CheckCircle, label: 'Tasks' },
   { href: '/admin/subtasks', icon: ClipboardList, label: 'Sub-tasks' },
+  { href: '/admin/sites', icon: Building2, label: 'Sites' },
+  { href: '/admin/clients', icon: User, label: 'Clients' },
+  { href: '/admin/quotations', icon: FileText, label: 'Quotations' },
   { href: '/admin/requests', icon: GitPullRequest, label: 'Requests' },
   { href: '/admin/issue', icon: AlertCircle, label: 'Issue' },
   { href: '/admin/worker', icon: HardHat, label: 'Worker' },
