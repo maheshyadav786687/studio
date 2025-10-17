@@ -27,7 +27,7 @@ export function AppSidebarNav() {
   return (
     <div className="flex h-full max-h-screen flex-col gap-2 bg-sidebar text-sidebar-foreground">
       <div className="flex h-14 items-center border-b border-sidebar-border px-4 lg:h-[60px] lg:px-6">
-        <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
+        <Link href="/" className="flex items-center gap-2 font-semibold font-headline text-primary">
           <GanttChartSquare className="h-6 w-6" />
           <span>ContractorBabu</span>
         </Link>
@@ -39,8 +39,8 @@ export function AppSidebarNav() {
               key={label}
               href={href}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-sidebar-accent',
-                pathname.startsWith(href) ? 'bg-sidebar-accent' : ''
+                'flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                pathname.startsWith(href) ? 'bg-sidebar-accent text-sidebar-accent-foreground' : ''
               )}
             >
               <Icon className="h-4 w-4" />
@@ -55,7 +55,7 @@ export function AppSidebarNav() {
         </nav>
       </div>
       <div className="mt-auto p-4">
-        <Button size="sm" className="w-full justify-start gap-3 bg-sidebar-accent hover:bg-sidebar-accent/80">
+        <Button size="sm" variant="ghost" className="w-full justify-start gap-3">
           <Settings className="h-4 w-4" />
           Settings
         </Button>
