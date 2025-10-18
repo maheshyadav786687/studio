@@ -209,7 +209,6 @@ export function AppSidebarNav() {
              ))}
            </Accordion>
         ) : (
-            // Render a non-interactive version on the server to prevent mismatch
             <div className="w-full px-2 lg:px-4 space-y-1 py-2">
                 {navItems.map(item => (
                     <div key={item.label} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground">
