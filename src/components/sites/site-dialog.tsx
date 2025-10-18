@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
@@ -56,6 +56,8 @@ export function SiteDialog({ site, children, onOpenChange, open: parentOpen }: S
     },
   });
   
+  const currentOpen = parentOpen !== undefined ? parentOpen : open;
+
   useEffect(() => {
     async function fetchClients() {
       try {
@@ -68,7 +70,7 @@ export function SiteDialog({ site, children, onOpenChange, open: parentOpen }: S
     if(currentOpen) {
       fetchClients();
     }
-  }, [parentOpen, open]);
+  }, [currentOpen]);
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
@@ -78,7 +80,6 @@ export function SiteDialog({ site, children, onOpenChange, open: parentOpen }: S
     if (onOpenChange) onOpenChange(isOpen);
   };
   
-  const currentOpen = parentOpen !== undefined ? parentOpen : open;
 
   async function onSubmit(data: SiteFormData) {
     try {
