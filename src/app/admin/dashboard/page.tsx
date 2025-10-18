@@ -1,13 +1,40 @@
 import { StatsCards } from '@/components/dashboard/stats-cards';
 import { ProjectsOverviewChart } from '@/components/dashboard/projects-overview-chart';
 import { RecentUpdates } from '@/components/dashboard/recent-updates';
+import { getProjects } from '@/lib/bll/project-bll';
+import type { Project } from '@/lib/types';
 
-export default function DashboardPage() {
+async function getProjectStatusData() {
+  try {
+    const projects: Project[] = await getProjects();
+    const counts = {
+      'In Progress': 0,
+      'Completed': 0,
+      'Not Started': 0,
+      'Delayed': 0,
+    };
+
+    projects.forEach(project => {
+      if (project.status in counts) {
+        counts[project.status as keyof typeof counts]++;
+      }
+    });
+    
+    return Object.entries(counts).map(([name, value]) => ({ name, total: value }));
+  } catch (error) {
+    console.error("Failed to fetch project status data for chart:", error);
+    return [];
+  }
+}
+
+export default async function DashboardPage() {
+  const chartData = await getProjectStatusData();
+
   return (
     <div className="space-y-6">
       <StatsCards />
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <ProjectsOverviewChart />
+        <ProjectsOverviewChart data={chartData} />
         <RecentUpdates />
       </div>
     </div>
