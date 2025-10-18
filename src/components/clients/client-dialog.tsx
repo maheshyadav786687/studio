@@ -21,6 +21,7 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
 import { Client, ClientSchema } from '@/lib/types';
+import { createClient, updateClient } from '@/lib/services/client-api-service';
 
 type ClientDialogProps = {
   client?: Client;
@@ -31,7 +32,7 @@ type ClientDialogProps = {
 
 // DTO for the form
 const FormSchema = ClientSchema.omit({ id: true, avatarUrl: true, projectsCount: true });
-type ClientFormData = z.infer<typeof FormSchema>;
+export type ClientFormData = z.infer<typeof FormSchema>;
 
 export function ClientDialog({ client, children, onOpenChange, open: parentOpen }: ClientDialogProps) {
   const [open, setOpen] = useState(false);
@@ -66,20 +67,12 @@ export function ClientDialog({ client, children, onOpenChange, open: parentOpen 
   const currentOpen = parentOpen !== undefined ? parentOpen : open;
 
   async function onSubmit(data: ClientFormData) {
-    // UIL calls the API Layer
-    const url = client ? `/api/clients/${client.id}` : '/api/clients';
-    const method = client ? 'PATCH' : 'POST';
-
+    // UIL calls the Frontend API Service
     try {
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Something went wrong.');
+      if (client) {
+        await updateClient(client.id, data);
+      } else {
+        await createClient(data);
       }
       
       toast({

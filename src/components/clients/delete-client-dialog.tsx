@@ -14,6 +14,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import type { Client } from '@/lib/types';
 import React from 'react';
+import { deleteClient as removeClient } from '@/lib/services/client-api-service';
 
 type DeleteClientDialogProps = {
   client: Client;
@@ -29,15 +30,9 @@ export function DeleteClientDialog({ client, children, onOpenChange, open }: Del
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    // UIL calls the API layer
+    // UIL calls the Frontend API Service
     try {
-      const response = await fetch(`/api/clients/${client.id}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete client.');
-      }
+      await removeClient(client.id);
       
       toast({
         title: 'Success',

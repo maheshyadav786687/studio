@@ -12,3 +12,7 @@ export const ClientSchema = z.object({
 });
 
 export type Client = z.infer<typeof ClientSchema>;
+
+// This is the DTO for the form, which doesn't include server-generated fields.
+export const ClientFormSchema = ClientSchema.omit({ id: true, avatarUrl: true, projectsCount: true });
+export type ClientFormData = z.infer<typeof ClientFormSchema>;

@@ -6,15 +6,12 @@ import { ProgressUpdates } from '@/components/projects/progress-updates';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import type { Project } from '@/lib/types';
+import { getProjectById } from '@/lib/services/project-api-service';
 
 async function getProject(id: string): Promise<Project | null> {
     try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/projects/${id}`, { cache: 'no-store' });
-        if (!res.ok) {
-            if (res.status === 404) return null;
-            throw new Error('Failed to fetch project');
-        }
-        return res.json();
+        // UIL calls the Frontend API Service
+        return await getProjectById(id);
     } catch (error) {
         console.error("Error fetching project:", error);
         return null;
