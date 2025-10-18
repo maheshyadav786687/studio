@@ -2,17 +2,14 @@
 
 // DAL (Data Access Layer) - MS SQL IMPLEMENTATION
 // This layer is responsible for all communication with the database.
+require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
 
 import sql from 'mssql';
 import type { Project, Client } from './types';
 import type { ClientCreateDto, ClientUpdateDto } from './bll/client-bll';
-import getConfig from 'next/config';
-
-// The serverRuntimeConfig is set in next.config.ts
-const { serverRuntimeConfig } = getConfig();
 
 const config = {
-  connectionString: serverRuntimeConfig.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL,
 };
 
 let pool: sql.ConnectionPool | null = null;
@@ -22,8 +19,8 @@ async function getDb(): Promise<sql.ConnectionPool> {
     return pool;
   }
   if (!config.connectionString) {
-    // Throw an error if the connection string is not set in next.config.js
-    throw new Error("DATABASE_URL is not configured in next.config.ts serverRuntimeConfig. The application cannot connect to the database.");
+    // Throw an error if the connection string is not set.
+    throw new Error("DATABASE_URL environment variable is not set. The application cannot connect to the database.");
   }
   try {
     pool = await sql.connect(config.connectionString);
