@@ -2,37 +2,40 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Briefcase,
-  GanttChartSquare,
   LayoutDashboard,
   Users,
+  Briefcase,
+  Package,
+  HardHat,
+  Receipt,
+  CircleDollarSign,
   BarChart3,
+  Settings,
+  KeyRound,
+  User,
   Building2,
   FileText,
-  CheckCircle,
   ClipboardList,
+  CheckCircle,
   AlertCircle,
-  HardHat,
-  CalendarCheck,
-  Wallet,
-  Landmark,
-  User,
+  Camera,
   GitPullRequest,
-  ChevronDown,
-  Settings,
-  ShieldCheck,
-  Package,
   Truck,
-  Building,
-  FileSignature,
+  Wallet,
+  CalendarCheck,
+  Landmark,
   HandCoins,
-  Receipt,
-  BookUser,
+  CalendarOff,
+  FileSignature,
   LineChart,
-  CircleDollarSign,
+  BookUser,
   FileBarChart2,
+  Building,
   File,
-  KeyRound
+  UserCog,
+  FileCog,
+  CreditCard,
+  UserCircle
 } from 'lucide-react';
 import {
   Accordion,
@@ -40,101 +43,103 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { GanttChartSquare } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { 
-    label: 'Clients & Sites', 
-    icon: Building,
+    label: 'Clients', 
+    icon: Users,
     subItems: [
       { href: '#', icon: User, label: 'Clients' },
       { href: '#', icon: Building2, label: 'Sites' },
-      { 
-        label: 'Quotations', 
-        icon: FileText,
-        subItems: [
-          { href: '#', label: 'Create / Send / Approve' },
-          { href: '#', label: 'Convert to Project' },
-        ]
-      },
+      { href: '#', icon: FileText, label: 'Quotes' },
+      { href: '#', icon: ClipboardList, label: 'Work Orders' },
     ]
   },
   {
-    label: 'Projects & Tasks',
+    label: 'Projects',
     icon: Briefcase,
     subItems: [
         { href: '/admin/projects', icon: Briefcase, label: 'Projects' },
         { href: '#', icon: ClipboardList, label: 'Tasks' },
         { href: '#', icon: CheckCircle, label: 'Subtasks' },
-        { href: '#', icon: FileText, label: 'Daily Updates' },
-        { href: '#', icon: File, label: 'Attachments' },
         { href: '#', icon: AlertCircle, label: 'Issues' },
+        { href: '#', icon: FileText, label: 'Daily Log' },
+        { href: '#', icon: Camera, label: 'Photos' },
     ]
   },
   {
-    label: 'Workforce',
-    icon: Users,
-    subItems: [
-        { href: '#', icon: HardHat, label: 'Workers' },
-        { href: '/admin/contractors', icon: Users, label: 'Subcontractors' },
-        { href: '#', icon: CalendarCheck, label: 'Attendance' },
-        { 
-            label: 'Payroll & Salary', 
-            icon: Landmark,
-            subItems: [
-                { href: '#', label: 'Salary Structure' },
-                { href: '#', label: 'Advance Salary' },
-                { href: '#', label: 'Leave & Loss of Pay' },
-                { href: '#', label: 'Salary Payment' },
-            ]
-        },
-    ]
-  },
-   {
-    label: 'Materials & Suppliers',
+    label: 'Materials',
     icon: Package,
     subItems: [
-        { href: '#', icon: Users, label: 'Suppliers / Vendors' },
-        { href: '#', icon: GitPullRequest, label: 'Material Requests' },
-        { href: '#', icon: ClipboardList, label: 'Inventory' },
-        { href: '#', icon: Truck, label: 'Logistics / Transportation' },
+        { href: '#', icon: GitPullRequest, label: 'Requests' },
+        { href: '#', icon: Truck, label: 'Suppliers' },
+        { href: '#', icon: ClipboardList, label: 'Stock' },
+        { href: '#', icon: Wallet, label: 'Expenses' },
+    ]
+  },
+  {
+    label: 'Workers',
+    icon: HardHat,
+    subItems: [
+        { href: '/admin/contractors', icon: Users, label: 'Worker List' },
+        { href: '#', icon: CalendarCheck, label: 'Attendance' },
+        { href: '#', icon: Landmark, label: 'Salary' },
+        { href: '#', icon: HandCoins, label: 'Advances' },
+        { href: '#', icon: CalendarOff, label: 'Leaves' },
     ]
   },
    {
-    label: 'Billing & Client Payments',
+    label: 'Billing',
     icon: Receipt,
     subItems: [
-        { href: '#', icon: FileSignature, label: 'Create Invoice / Bill' },
-        { href: '#', icon: HandCoins, label: 'Client Advance Payment' },
-        { href: '#', icon: LineChart, label: 'Payment Tracking' },
-        { href: '#', icon: BookUser, label: 'Client Ledger' },
-        { href: '#', icon: FileBarChart2, label: 'Billing Reports' },
+        { href: '#', icon: FileSignature, label: 'Client Bills' },
+        { href: '#', icon: HandCoins, label: 'Client Payments' },
+        { href: '#', icon: FileText, label: 'Vendor Bills' },
+        { href: '#', icon: Wallet, label: 'Vendor Payments' },
     ]
   },
    {
-    label: 'Financials & Budget',
+    label: 'Finance',
     icon: CircleDollarSign,
     subItems: [
         { href: '#', icon: Wallet, label: 'Expenses' },
-        { href: '#', icon: LineChart, label: 'Cost Tracking' },
-        { href: '#', icon: BarChart3, label: 'Profit & Loss Summary' },
+        { href: '#', icon: LineChart, label: 'Costing' },
+        { href: '#', icon: BookUser, label: 'Cash Flow' },
+        { href: '#', icon: FileBarChart2, label: 'Summary' },
     ]
   },
-  { href: '#', icon: BarChart3, label: 'Reports & Analytics' },
+  { 
+    label: 'Reports',
+    icon: BarChart3,
+    subItems: [
+        { href: '#', icon: Briefcase, label: 'Projects' },
+        { href: '#', icon: HardHat, label: 'Workers' },
+        { href: '#', icon: Package, label: 'Materials' },
+        { href: '#', icon: Receipt, label: 'Billing' },
+    ]
+  },
   {
-    label: 'Master / System Configuration',
+    label: 'Settings',
     icon: Settings,
     subItems: [
-        { href: '#', icon: Settings, label: 'Company Settings' },
-        { href: '#', icon: Users, label: 'User & Role Management' },
-        { href: '#', icon: FileText, label: 'Subscription / Plans' },
-        { href: '#', icon: File, label: 'PDF Templates' },
-        { href: '#', icon: HardHat, label: 'Equipment / Asset Management' },
+        { href: '#', icon: Building, label: 'Company' },
+        { href: '#', icon: FileCog, label: 'GST / PDF' },
+        { href: '#', icon: UserCog, label: 'Users' },
+        { href: '#', icon: CreditCard, label: 'Plan' },
     ]
   },
-    { href: '#', icon: KeyRound, label: 'Authentication & Security' },
+  {
+    label: 'Account',
+    icon: KeyRound,
+    subItems: [
+        { href: '/login', icon: KeyRound, label: 'Login' },
+        { href: '#', icon: UserCircle, label: 'Profile' },
+    ]
+  }
 ];
 
 
