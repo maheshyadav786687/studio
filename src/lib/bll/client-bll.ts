@@ -4,8 +4,14 @@
 
 'use server';
 
-import { db } from '@/lib/database';
-import type { Client, ClientFormData } from '@/lib/types';
+import { 
+    findManyClients, 
+    createClient as createDbClient,
+    updateClient as updateDbClient,
+    deleteClient as deleteDbClient,
+    findClientByEmail
+} from '@/lib/database';
+import type { Client } from '@/lib/types';
 
 export type ClientCreateDto = Omit<Client, 'id' | 'avatarUrl' | 'projectsCount'>;
 export type ClientUpdateDto = Partial<ClientCreateDto>;
@@ -14,7 +20,7 @@ export type ClientUpdateDto = Partial<ClientCreateDto>;
 // BLL function to get all clients
 export async function getClients(): Promise<Client[]> {
   // BLL calls the DAL
-  const clients = await db.clients.findMany();
+  const clients = await findManyClients();
   // Here you could add business logic, e.g., filtering, sorting, transforming data.
   // For now, we'll just return the DTOs from the DAL.
   return clients;
@@ -23,13 +29,13 @@ export async function getClients(): Promise<Client[]> {
 // BLL function to create a client
 export async function createClient(clientDto: ClientCreateDto): Promise<Client> {
   // Business logic: e.g. check for duplicate emails
-  const existingClient = await db.clients.findByEmail(clientDto.email);
+  const existingClient = await findClientByEmail(clientDto.email);
   if (existingClient) {
     throw new Error('A client with this email already exists.');
   }
 
   // BLL converts DTO to a model if necessary and calls DAL
-  const newClient = await db.clients.create(clientDto);
+  const newClient = await createDbClient(clientDto);
 
   // BLL returns a DTO
   return newClient;
@@ -38,7 +44,7 @@ export async function createClient(clientDto: ClientCreateDto): Promise<Client> 
 // BLL function to update a client
 export async function updateClient(id: string, clientDto: ClientUpdateDto): Promise<Client | undefined> {
   // BLL calls DAL
-  const updatedClient = await db.clients.update(id, clientDto);
+  const updatedClient = await updateDbClient(id, clientDto);
   
   // BLL returns a DTO
   return updatedClient;
@@ -50,5 +56,5 @@ export async function deleteClient(id: string): Promise<void> {
   // (We'll skip this for now, but this is where it would go)
 
   // BLL calls DAL
-  await db.clients.delete(id);
+  await deleteDbClient(id);
 }

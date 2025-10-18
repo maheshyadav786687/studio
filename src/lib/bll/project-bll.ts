@@ -1,16 +1,16 @@
 // BLL (Business Logic Layer) for Projects
 'use server';
 
-import { db } from '@/lib/database';
+import { findManyProjects, findProjectById } from '@/lib/database';
 import type { Project } from '@/lib/types';
 
 export async function getProjects(): Promise<Project[]> {
-  const projects = await db.projects.findMany();
+  const projects = await findManyProjects();
   return projects;
 }
 
 export async function getProjectById(id: string): Promise<Project | null> {
-    const project = await db.projects.findById(id);
+    const project = await findProjectById(id);
     if (!project) {
         return null;
     }
