@@ -1,3 +1,4 @@
+
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -128,80 +129,9 @@ type NavItem = {
   subItems?: NavItem[]
 }
 
-type NavLinkProps = {
-  item: NavItem
-  pathname: string
-  isSubItem?: boolean
-}
-
-const NavLink = ({ item, pathname, isSubItem = false }: NavLinkProps) => {
-  const { href, icon: Icon, label, subItems } = item
-  const isParentActive =
-    subItems?.some(sub => sub.href && pathname.startsWith(sub.href)) ||
-    subItems?.some(sub =>
-      sub.subItems?.some(s => s.href && pathname.startsWith(s.href))
-    )
-  
+const NavLink = ({ item, pathname }: { item: NavItem, pathname: string }) => {
+  const { href, icon: Icon, label } = item;
   const isLinkActive = href && pathname.startsWith(href);
-
-
-  if (subItems) {
-    const content = (
-      <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
-        {subItems.map(subItem => (
-          <NavLink
-            key={subItem.label}
-            item={subItem}
-            pathname={pathname}
-            isSubItem={true}
-          />
-        ))}
-      </nav>
-    )
-
-    if (isSubItem) {
-      return (
-        <Accordion type="single" collapsible className="w-full">
-          <AccordionItem value={label} className="border-b-0">
-            <AccordionTrigger
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline",
-                isParentActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "",
-                "w-full justify-between"
-              )}
-            >
-              <div className="flex items-center gap-3">
-                {Icon && <Icon className="h-4 w-4" />}
-                <span>{label}</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pl-4 pb-0">{content}</AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      )
-    }
-
-    return (
-      <AccordionItem value={label} className="border-b-0">
-        <AccordionTrigger
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline",
-            isParentActive
-              ? "bg-sidebar-accent text-sidebar-accent-foreground"
-              : ""
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <Icon className="h-4 w-4" />
-            <span className="flex-1 text-left">{label}</span>
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="pl-4 pb-0">{content}</AccordionContent>
-      </AccordionItem>
-    )
-  }
 
   return (
     <Link
@@ -219,6 +149,39 @@ const NavLink = ({ item, pathname, isSubItem = false }: NavLinkProps) => {
   )
 }
 
+const SubMenu = ({ item, pathname }: { item: NavItem, pathname: string }) => {
+    const { subItems, label, icon: Icon } = item;
+    const isParentActive = subItems?.some(sub => sub.href && pathname.startsWith(sub.href));
+
+    if (!subItems) return null;
+
+    return (
+        <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value={label} className="border-b-0">
+                <AccordionTrigger
+                  className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline",
+                      isParentActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "",
+                      "w-full justify-between"
+                  )}
+                >
+                    <div className="flex items-center gap-3">
+                        {Icon && <Icon className="h-4 w-4" />}
+                        <span>{label}</span>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="pl-4 pb-0">
+                    <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
+                        {subItems.map(subItem => (
+                            <NavLink key={subItem.label} item={subItem} pathname={pathname} />
+                        ))}
+                    </nav>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
+    );
+};
+
 export function AppSidebarNav() {
   const pathname = usePathname()
   
@@ -227,10 +190,7 @@ export function AppSidebarNav() {
       item.href !== '/admin/dashboard' &&
       item.subItems &&
       (item.href === pathname ||
-        item.subItems?.some(sub => sub.href && pathname.startsWith(sub.href)) ||
-        item.subItems?.some(sub =>
-          sub.subItems?.some(s => s.href && pathname.startsWith(s.href))
-        ))
+        item.subItems?.some(sub => sub.href && pathname.startsWith(sub.href)))
   )
 
   return (
@@ -251,13 +211,39 @@ export function AppSidebarNav() {
           className="w-full px-2 lg:px-4 space-y-1 py-2"
           defaultValue={activeParent?.label}
         >
-          {navItems.map(item => (
-            <NavLink
-              key={item.label}
-              item={item as NavItem}
-              pathname={pathname}
-            />
-          ))}
+          {navItems.map(item => {
+            if (item.subItems) {
+                if (item.label === "Clients") {
+                     return <SubMenu key={item.label} item={item} pathname={pathname} />;
+                }
+              return (
+                <AccordionItem key={item.label} value={item.label} className="border-b-0">
+                  <AccordionTrigger
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline",
+                      item.subItems?.some(sub => sub.href && pathname.startsWith(sub.href)) ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <item.icon className="h-4 w-4" />
+                      <span className="flex-1 text-left">{item.label}</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pl-4 pb-0">
+                    <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
+                      {item.subItems.map(subItem => {
+                        if (subItem.subItems) {
+                            return <SubMenu key={subItem.label} item={subItem} pathname={pathname} />;
+                        }
+                        return <NavLink key={subItem.label} item={subItem} pathname={pathname} />
+                      })}
+                    </nav>
+                  </AccordionContent>
+                </AccordionItem>
+              )
+            }
+            return <NavLink key={item.label} item={item} pathname={pathname} />
+          })}
         </Accordion>
       </div>
     </div>
