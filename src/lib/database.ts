@@ -4,6 +4,9 @@
 // This layer is responsible for all communication with the database.
 // It should only be called by the BLL.
 
+// Load environment variables directly here to ensure they are available.
+import 'dotenv/config';
+
 import sql from 'mssql';
 import type { Project, Client } from './types';
 import type { ClientCreateDto, ClientUpdateDto } from './bll/client-bll';
