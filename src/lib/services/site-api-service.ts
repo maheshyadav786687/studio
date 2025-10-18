@@ -21,6 +21,11 @@ export async function getSites(): Promise<Site[]> {
     return handleResponse(response);
 }
 
+export async function getSitesGroupedByClient() {
+    const response = await fetch(`${BASE_URL}?grouped=true`, { cache: 'no-store' });
+    return handleResponse(response);
+}
+
 export async function createSite(data: SiteFormData): Promise<Site> {
     const response = await fetch(BASE_URL, {
         method: 'POST',

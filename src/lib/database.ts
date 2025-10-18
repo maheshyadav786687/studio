@@ -179,9 +179,42 @@ export async function findManySites(): Promise<Site[]> {
         company: '',
         avatarUrl: '',
         projectsCount: 0,
+        sitesCount: 0,
         status: 'Active'
     }
   }));
+}
+
+export async function findManySitesGroupedByClient() {
+    const db = await getDb();
+    const query = `
+      SELECT 
+        c.id as clientId,
+        c.name as clientName,
+        s.id as siteId,
+        s.name as siteName
+      FROM Clients c
+      JOIN Sites s ON c.id = s.clientId
+      ORDER BY c.name, s.name;
+    `;
+    const rows = await db.all(query);
+    
+    const grouped: Record<string, { clientName: string, sites: { id: string, name: string }[] }> = {};
+    
+    rows.forEach(row => {
+      if (!grouped[row.clientId]) {
+        grouped[row.clientId] = {
+          clientName: row.clientName,
+          sites: []
+        };
+      }
+      grouped[row.clientId].sites.push({
+        id: row.siteId,
+        name: row.siteName
+      });
+    });
+    
+    return Object.values(grouped);
 }
 
 export async function findSiteById(id: string): Promise<Site | undefined> {
@@ -225,6 +258,7 @@ export async function findSiteById(id: string): Promise<Site | undefined> {
             company: '',
             avatarUrl: '',
             projectsCount: 0,
+            sitesCount: 0,
             status: 'Active'
         }
     };
@@ -271,7 +305,8 @@ export async function findManyQuotations(): Promise<Quotation[]> {
             c.name as clientName
         FROM Quotations q
         JOIN Sites s ON q.siteId = s.id
-        JOIN Clients c ON s.clientId = c.id;
+        JOIN Clients c ON s.clientId = c.id
+        ORDER BY q.quotationDate DESC;
     `;
     const results = await db.all(query);
     return results.map(row => ({
@@ -300,15 +335,35 @@ export async function findQuotationById(id: string): Promise<Quotation | undefin
     };
 }
 
+async function getNextQuotationNumber(): Promise<string> {
+    const db = await getDb();
+    const currentYear = new Date().getFullYear();
+    const prefix = `QUO-${currentYear}-`;
+
+    const lastQuotation = await db.get(
+        "SELECT quotationNumber FROM Quotations WHERE quotationNumber LIKE ? ORDER BY quotationNumber DESC LIMIT 1",
+        `${prefix}%`
+    );
+
+    let nextSequence = 1;
+    if (lastQuotation) {
+        const lastSequence = parseInt(lastQuotation.quotationNumber.split('-').pop() || '0', 10);
+        nextSequence = lastSequence + 1;
+    }
+    
+    return `${prefix}${nextSequence.toString().padStart(4, '0')}`;
+}
+
 export async function createQuotation(quotationData: QuotationCreateDto): Promise<Quotation> {
     const db = await getDb();
     const id = `quote-${Date.now()}`;
     const itemsJson = JSON.stringify(quotationData.items || []);
+    const quotationNumber = await getNextQuotationNumber();
     const query = `
-        INSERT INTO Quotations (id, title, status, siteId, items)
-        VALUES (?, ?, ?, ?, ?);
+        INSERT INTO Quotations (id, quotationNumber, quotationDate, title, status, siteId, items)
+        VALUES (?, ?, ?, ?, ?, ?, ?);
     `;
-    await db.run(query, id, quotationData.title, quotationData.status, quotationData.siteId, itemsJson);
+    await db.run(query, id, quotationNumber, quotationData.quotationDate, quotationData.title, quotationData.status, quotationData.siteId, itemsJson);
     const newQuotation = await findQuotationById(id);
     return newQuotation!;
 }
@@ -319,12 +374,13 @@ export async function updateQuotation(id: string, quotationData: QuotationUpdate
     const query = `
         UPDATE Quotations
         SET title = COALESCE(?, title),
+            quotationDate = COALESCE(?, quotationDate),
             status = COALESCE(?, status),
             siteId = COALESCE(?, siteId),
             items = COALESCE(?, items)
         WHERE id = ?;
     `;
-    await db.run(query, quotationData.title, quotationData.status, quotationData.siteId, itemsJson, id);
+    await db.run(query, quotationData.title, quotationData.quotationDate, quotationData.status, quotationData.siteId, itemsJson, id);
     return await findQuotationById(id);
 }
 
@@ -378,6 +434,8 @@ export async function initializeDbSchema() {
 
       CREATE TABLE IF NOT EXISTS Quotations (
           id TEXT PRIMARY KEY,
+          quotationNumber TEXT NOT NULL UNIQUE,
+          quotationDate TEXT NOT NULL,
           title TEXT NOT NULL,
           status TEXT CHECK (status IN ('Draft', 'Sent', 'Approved', 'Rejected')),
           siteId TEXT NOT NULL,

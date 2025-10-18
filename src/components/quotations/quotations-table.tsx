@@ -12,6 +12,7 @@ import {
   getFilteredRowModel,
   ColumnFiltersState,
 } from '@tanstack/react-table';
+import { format } from 'date-fns';
 
 import {
   Table,
@@ -48,6 +49,21 @@ import {
 
 export const columns: ColumnDef<Quotation>[] = [
   {
+    accessorKey: 'quotationNumber',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Number
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => <div className="pl-4 font-medium">{row.getValue("quotationNumber")}</div>,
+  },
+  {
     accessorKey: 'title',
     header: ({ column }) => {
       return (
@@ -61,6 +77,24 @@ export const columns: ColumnDef<Quotation>[] = [
       );
     },
     cell: ({ row }) => <div className="pl-4 font-medium">{row.getValue("title")}</div>,
+  },
+  {
+    accessorKey: 'quotationDate',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+        >
+          Date
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+        const date = row.getValue("quotationDate") as string;
+        return <div className="pl-4">{format(new Date(date), 'dd MMM yyyy')}</div>
+    }
   },
   {
     accessorKey: 'siteName',

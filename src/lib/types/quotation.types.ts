@@ -1,5 +1,6 @@
 
 import { z } from 'zod';
+import { format } from 'date-fns';
 
 export const QuotationItemSchema = z.object({
   id: z.string(),
@@ -12,6 +13,8 @@ export type QuotationItem = z.infer<typeof QuotationItemSchema>;
 
 export const QuotationSchema = z.object({
   id: z.string(),
+  quotationNumber: z.string(),
+  quotationDate: z.string(),
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   status: z.enum(['Draft', 'Sent', 'Approved', 'Rejected']),
   siteId: z.string({ required_error: 'Site is required.' }),
@@ -27,7 +30,9 @@ export const QuotationFormSchema = QuotationSchema.omit({
     id: true, 
     siteName: true,
     clientName: true,
+    quotationNumber: true,
 }).extend({
-    items: z.array(FormQuotationItemSchema).optional()
+    items: z.array(FormQuotationItemSchema).optional(),
+    quotationDate: z.union([z.date(), z.string()]).transform(val => val instanceof Date ? format(val, 'yyyy-MM-dd') : val),
 });
 export type QuotationFormData = z.infer<typeof QuotationFormSchema>;

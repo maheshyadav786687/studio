@@ -9,16 +9,21 @@ import {
     deleteSite as deleteDbSite,
     findSiteById,
     findClientById,
+    findManySitesGroupedByClient as findManySitesGroupedByClientDb
 } from '@/lib/database';
 import type { Site } from '@/lib/types';
 
-export type SiteCreateDto = Omit<Site, 'id' | 'client' | 'projects' | 'quotations'>;
+export type SiteCreateDto = Omit<Site, 'id' | 'client' | 'projects' | 'quotations' | 'projectsCount' | 'quotationsCount'>;
 export type SiteUpdateDto = Partial<SiteCreateDto>;
 
 export async function getSites(): Promise<Site[]> {
   const sites = await findManySites();
   // Here you could add business logic, e.g., mapping additional data
   return sites;
+}
+
+export async function getSitesGroupedByClient() {
+    return await findManySitesGroupedByClientDb();
 }
 
 export async function createSite(siteDto: SiteCreateDto): Promise<Site> {

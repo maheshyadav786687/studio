@@ -9,6 +9,7 @@ import {
     deleteQuotation as deleteDbQuotation,
     findQuotationById,
     findSiteById,
+    findManySitesGroupedByClient,
 } from '@/lib/database';
 import type { Quotation } from '@/lib/types';
 import { QuotationFormSchema } from '@/lib/types';
@@ -21,6 +22,10 @@ export type QuotationUpdateDto = Partial<QuotationCreateDto>;
 export async function getQuotations(): Promise<Quotation[]> {
   const quotations = await findManyQuotations();
   return quotations;
+}
+
+export async function getSitesGroupedByClient() {
+    return await findManySitesGroupedByClient();
 }
 
 export async function getQuotationById(id: string): Promise<Quotation | undefined> {

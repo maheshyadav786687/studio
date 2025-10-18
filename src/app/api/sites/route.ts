@@ -1,16 +1,24 @@
 
 import { NextResponse } from 'next/server';
-import { getSites, createSite } from '@/lib/bll/site-bll';
+import { getSites, createSite, getSitesGroupedByClient } from '@/lib/bll/site-bll';
 import { SiteFormSchema } from '@/lib/types';
 
-export async function GET() {
-  try {
-    const sites = await getSites();
-    return NextResponse.json(sites);
-  } catch (error) {
-    console.error('[API_SITES_GET]', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
-  }
+export async function GET(req: Request) {
+    const { searchParams } = new URL(req.url);
+    const grouped = searchParams.get('grouped');
+
+    try {
+        if (grouped === 'true') {
+            const groupedSites = await getSitesGroupedByClient();
+            return NextResponse.json(groupedSites);
+        }
+
+        const sites = await getSites();
+        return NextResponse.json(sites);
+    } catch (error) {
+        console.error('[API_SITES_GET]', error);
+        return new NextResponse('Internal Server Error', { status: 500 });
+    }
 }
 
 export async function POST(req: Request) {

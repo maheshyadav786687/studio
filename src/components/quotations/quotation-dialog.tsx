@@ -6,7 +6,10 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { format } from 'date-fns';
+import { Calendar as CalendarIcon } from 'lucide-react';
 
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -23,11 +26,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Quotation, QuotationFormSchema, Site } from '@/lib/types';
 import { createQuotation, updateQuotation } from '@/lib/services/quotation-api-service';
-import { getSites } from '@/lib/services/site-api-service';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getSitesGroupedByClient } from '@/lib/services/site-api-service';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2, PlusCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 
+type SiteGroup = {
+    clientName: string;
+    sites: { id: string; name: string }[];
+};
 
 type QuotationDialogProps = {
   quotation?: Quotation;
@@ -40,7 +49,7 @@ type QuotationFormData = z.infer<typeof QuotationFormSchema>;
 
 export function QuotationDialog({ quotation, children, onOpenChange, open: parentOpen }: QuotationDialogProps) {
   const [open, setOpen] = useState(false);
-  const [sites, setSites] = useState<Site[]>([]);
+  const [siteGroups, setSiteGroups] = useState<SiteGroup[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
@@ -54,12 +63,13 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
   } = useForm<QuotationFormData>({
     resolver: zodResolver(QuotationFormSchema),
     defaultValues: quotation ? 
-    { ...quotation, items: quotation.items || [] } :
+    { ...quotation, items: quotation.items || [], quotationDate: new Date(quotation.quotationDate) } :
     {
       title: '',
       siteId: '',
       status: 'Draft',
       items: [],
+      quotationDate: new Date(),
     },
   });
 
@@ -73,8 +83,8 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
   useEffect(() => {
     async function fetchSites() {
       try {
-        const fetchedSites = await getSites();
-        setSites(fetchedSites);
+        const fetchedSiteGroups = await getSitesGroupedByClient();
+        setSiteGroups(fetchedSiteGroups);
       } catch (error) {
         console.error('Failed to fetch sites', error);
       }
@@ -131,13 +141,13 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
       <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>{quotation ? 'Edit Quotation' : 'Add New Quotation'}</DialogTitle>
+            <DialogTitle>{quotation ? `Edit Quotation - ${quotation.quotationNumber}` : 'Add New Quotation'}</DialogTitle>
             <DialogDescription>
               {quotation ? 'Update the details for this quotation.' : 'Enter the details for the new quotation.'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="title">Title</Label>
                     <Input id="title" {...register('title')} />
@@ -154,16 +164,53 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                                 <SelectValue placeholder="Select a site" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                {sites.map((s) => (
-                                    <SelectItem key={s.id} value={s.id}>
-                                    {s.name} ({s.client?.name})
-                                    </SelectItem>
-                                ))}
+                                    {siteGroups.map((group) => (
+                                        <SelectGroup key={group.clientName}>
+                                            <SelectLabel>{group.clientName}</SelectLabel>
+                                            {group.sites.map((s) => (
+                                                <SelectItem key={s.id} value={s.id}>
+                                                    {s.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         )}
                     />
                     {errors.siteId && <p className="text-xs text-red-500">{errors.siteId.message}</p>}
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="quotationDate">Quotation Date</Label>
+                     <Controller
+                        name="quotationDate"
+                        control={control}
+                        render={({ field }) => (
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {field.value ? format(new Date(field.value), "PPP") : <span>Pick a date</span>}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0">
+                                    <Calendar
+                                        mode="single"
+                                        selected={field.value ? new Date(field.value) : undefined}
+                                        onSelect={field.onChange}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                        )}
+                    />
+                    {errors.quotationDate && <p className="text-xs text-red-500">{errors.quotationDate.message}</p>}
                 </div>
             </div>
 

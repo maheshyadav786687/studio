@@ -1,3 +1,4 @@
+
 'use server';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
@@ -73,6 +74,8 @@ async function initializeDb(db: Awaited<ReturnType<typeof open>>) {
 
     CREATE TABLE IF NOT EXISTS Quotations (
         id TEXT PRIMARY KEY,
+        quotationNumber TEXT NOT NULL UNIQUE,
+        quotationDate TEXT NOT NULL,
         title TEXT NOT NULL,
         status TEXT CHECK (status IN ('Draft', 'Sent', 'Approved', 'Rejected')),
         siteId TEXT NOT NULL,
@@ -141,13 +144,13 @@ async function initializeDb(db: Awaited<ReturnType<typeof open>>) {
   const quotationsCount = await db.get('SELECT COUNT(*) as count FROM Quotations');
     if (quotationsCount.count === 0) {
         const quotations = [
-            { id: 'q1', title: 'Quotation for Website Redesign', status: 'Approved', siteId: 'site-1' },
-            { id: 'q2', title: 'Quotation for Mobile App', status: 'Sent', siteId: 'site-2' },
-            { id: 'q3', title: 'Quotation for E-commerce Platform', status: 'Draft', siteId: 'site-3' },
+            { id: 'q1', quotationNumber: 'QUO-2024-0001', quotationDate: '2024-07-20', title: 'Quotation for Website Redesign', status: 'Approved', siteId: 'site-1' },
+            { id: 'q2', quotationNumber: 'QUO-2024-0002', quotationDate: '2024-07-21', title: 'Quotation for Mobile App', status: 'Sent', siteId: 'site-2' },
+            { id: 'q3', quotationNumber: 'QUO-2024-0003', quotationDate: '2024-07-22', title: 'Quotation for E-commerce Platform', status: 'Draft', siteId: 'site-3' },
         ];
-        const quoteStmt = await db.prepare("INSERT INTO Quotations (id, title, status, siteId) VALUES (?, ?, ?, ?)");
+        const quoteStmt = await db.prepare("INSERT INTO Quotations (id, quotationNumber, quotationDate, title, status, siteId) VALUES (?, ?, ?, ?, ?, ?)");
         for (const q of quotations) {
-            await quoteStmt.run(q.id, q.title, q.status, q.siteId);
+            await quoteStmt.run(q.id, q.quotationNumber, q.quotationDate, q.title, q.status, q.siteId);
         }
         await quoteStmt.finalize();
     }
