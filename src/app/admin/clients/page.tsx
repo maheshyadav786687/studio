@@ -1,3 +1,4 @@
+
 import { ClientsTable } from "@/components/clients/clients-table";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
@@ -37,15 +38,7 @@ export default async function ClientsPage() {
             </ClientDialog>
         </div>
       </div>
-      <Card>
-          <CardHeader>
-              <CardTitle>Client List</CardTitle>
-              <CardDescription>A list of all clients in your system.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ClientsTable clients={clients} />
-          </CardContent>
-      </Card>
+      <ClientsTable clients={clients} />
     </div>
   );
 }
