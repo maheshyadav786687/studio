@@ -30,7 +30,11 @@ export default function ContractorsPage() {
           </ContractorDialog>
         </div>
       </div>
-      <ContractorsTable />
+      <Card>
+        <CardContent>
+           <ContractorsTable />
+        </CardContent>
+      </Card>
     </div>
   )
 }

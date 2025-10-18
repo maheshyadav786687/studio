@@ -1,10 +1,15 @@
+'use client';
 import { PlusCircle } from "lucide-react"
+import { useProjects } from "@/hooks/use-projects";
 
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/projects/project-card"
-import { projects } from "@/lib/data"
+import { Skeleton } from "@/components/ui/skeleton";
+
 
 export default function ProjectsPage() {
+  const { projects, isLoading, error } = useProjects();
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center">
@@ -21,11 +26,27 @@ export default function ProjectsPage() {
           </Button>
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {projects.map(project => (
-          <ProjectCard key={project.id} project={project} />
-        ))}
-      </div>
+       {isLoading && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+             <div key={i} className="flex flex-col space-y-3">
+                <Skeleton className="h-[200px] w-full rounded-lg" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {error && <p className="text-destructive">Failed to load projects.</p>}
+      {!isLoading && !error && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {projects.map(project => (
+            <ProjectCard key={project.id} project={project} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
