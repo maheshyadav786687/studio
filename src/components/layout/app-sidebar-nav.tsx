@@ -149,39 +149,6 @@ const NavLink = ({ item, pathname }: { item: NavItem, pathname: string }) => {
   )
 }
 
-const SubMenu = ({ item, pathname }: { item: NavItem, pathname: string }) => {
-    const { subItems, label, icon: Icon } = item;
-    const isParentActive = subItems?.some(sub => sub.href && pathname.startsWith(sub.href));
-
-    if (!subItems) return null;
-
-    return (
-        <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value={label} className="border-b-0">
-                <AccordionTrigger
-                  className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline",
-                      isParentActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "",
-                      "w-full justify-between"
-                  )}
-                >
-                    <div className="flex items-center gap-3">
-                        {Icon && <Icon className="h-4 w-4" />}
-                        <span>{label}</span>
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent className="pl-4 pb-0">
-                    <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
-                        {subItems.map(subItem => (
-                            <NavLink key={subItem.label} item={subItem} pathname={pathname} />
-                        ))}
-                    </nav>
-                </AccordionContent>
-            </AccordionItem>
-        </Accordion>
-    );
-};
-
 export function AppSidebarNav() {
   const pathname = usePathname()
   
@@ -213,9 +180,6 @@ export function AppSidebarNav() {
         >
           {navItems.map(item => {
             if (item.subItems) {
-                if (item.label === "Clients") {
-                     return <SubMenu key={item.label} item={item} pathname={pathname} />;
-                }
               return (
                 <AccordionItem key={item.label} value={item.label} className="border-b-0">
                   <AccordionTrigger
@@ -231,12 +195,9 @@ export function AppSidebarNav() {
                   </AccordionTrigger>
                   <AccordionContent className="pl-4 pb-0">
                     <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
-                      {item.subItems.map(subItem => {
-                        if (subItem.subItems) {
-                            return <SubMenu key={subItem.label} item={subItem} pathname={pathname} />;
-                        }
-                        return <NavLink key={subItem.label} item={subItem} pathname={pathname} />
-                      })}
+                      {item.subItems.map(subItem => (
+                        <NavLink key={subItem.label} item={subItem} pathname={pathname} />
+                      ))}
                     </nav>
                   </AccordionContent>
                 </AccordionItem>
