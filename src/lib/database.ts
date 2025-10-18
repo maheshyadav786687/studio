@@ -12,39 +12,26 @@ const config = {
   connectionString: process.env.DATABASE_URL,
 };
 
-if (!config.connectionString) {
-  // In a real app, you'd want more robust handling, but for now this is fine.
-  // We'll proceed with a "mock" mode if no connection string is provided.
-  console.warn("DATABASE_URL environment variable is not set. Running in mock data mode.");
-}
-
 // In a real production app, you might want to manage a connection pool
-// more carefully, but for this purpose, connecting on each request is fine.
+// more carefully, but for this purpose, creating a new pool on demand is fine.
 const getDb = async () => {
-    if(!config.connectionString) return null;
+    if (!config.connectionString) {
+      // Throw an error if the connection string is not set.
+      throw new Error("DATABASE_URL environment variable is not set. The application cannot connect to the database.");
+    }
     try {
-        return await sql.connect(config);
+        const pool = await sql.connect(config.connectionString);
+        return pool;
     } catch (err) {
         console.error("Database connection failed:", err);
-        return null;
+        // Re-throw the error to be caught by the calling layer.
+        throw new Error(`Database connection failed. Please check your connection string and network access. Original error: ${err instanceof Error ? err.message : String(err)}`);
     }
 }
 
 
 /**
- * NOTE: The queries below assume you have created the necessary tables.
- * Example SQL for Clients table:
- * CREATE TABLE Clients (
- *   id NVARCHAR(50) PRIMARY KEY,
- *   name NVARCHAR(255) NOT NULL,
- *   email NVARCHAR(255) NOT NULL UNIQUE,
- *   phone NVARCHAR(50),
- *   company NVARCHAR(255),
- *   avatarUrl NVARCHAR(MAX),
- *   status NVARCHAR(20) CHECK (status IN ('Active', 'Inactive')),
- *   projectsCount INT DEFAULT 0
- * );
- * 
+ * NOTE: The queries below assume you have created the necessary tables from schema.sql
  * The project-related queries assume that `tasks` and `updates` are stored as JSON strings.
  * This is a simplification. In a real-world scenario, you would have separate tables for Tasks and Updates.
  */
@@ -53,7 +40,6 @@ const getDb = async () => {
 
 export async function findManyProjects(): Promise<Project[]> {
     const pool = await getDb();
-    if (!pool) return []; // Return empty array if DB is not connected
     const result = await pool.request().query`SELECT * FROM Projects`;
     return result.recordset.map(p => ({
         ...p,
@@ -65,7 +51,6 @@ export async function findManyProjects(): Promise<Project[]> {
 
 export async function findProjectById(id: string): Promise<Project | undefined> {
     const pool = await getDb();
-    if (!pool) return undefined;
     const result = await pool.request()
     .input('id', sql.NVarChar, id)
     .query`SELECT * FROM Projects WHERE id = @id`;
@@ -87,7 +72,6 @@ export async function findProjectById(id: string): Promise<Project | undefined> 
 
 export async function findManyClients(): Promise<Client[]> {
     const pool = await getDb();
-    if (!pool) return [];
     // A more complex query to calculate projectsCount on the fly
     const result = await pool.request().query`
     SELECT 
@@ -100,7 +84,6 @@ export async function findManyClients(): Promise<Client[]> {
 
 export async function findClientByEmail(email: string): Promise<Client | undefined> {
     const pool = await getDb();
-    if (!pool) return undefined;
     const result = await pool.request()
     .input('email', sql.NVarChar, email)
     .query`SELECT * FROM Clients WHERE email = @email`;
@@ -108,22 +91,11 @@ export async function findClientByEmail(email: string): Promise<Client | undefin
 }
 
 export async function createClient(clientData: ClientCreateDto): Promise<Client> {
-    const pool = await getDb();
+    const pool = await getDb(); // This will now throw an error if it can't connect
     const newId = `cl${Date.now()}`;
     const avatarUrl = `https://picsum.photos/seed/${Date.now()}/100/100`;
 
-    const newClient: Client = {
-    ...clientData,
-    id: newId,
-    avatarUrl: avatarUrl,
-    projectsCount: 0,
-    };
-
-    if (!pool) {
-        console.log("Running in mock mode, not saving to DB.");
-        return newClient;
-    }
-
+    // Await the query to ensure it completes before returning.
     await pool.request()
     .input('id', sql.NVarChar, newId)
     .input('name', sql.NVarChar, clientData.name)
@@ -132,14 +104,21 @@ export async function createClient(clientData: ClientCreateDto): Promise<Client>
     .input('company', sql.NVarChar, clientData.company)
     .input('avatarUrl', sql.NVarChar, avatarUrl)
     .input('status', sql.NVarChar, clientData.status)
-    .query`INSERT INTO Clients (id, name, email, phone, company, avatarUrl, status) VALUES (@id, @name, @email, @phone, @company, @avatarUrl, @status)`;
+    .query`INSERT INTO Clients (id, name, email, phone, company, avatarUrl, status, projectsCount) VALUES (@id, @name, @email, @phone, @company, @avatarUrl, @status, 0)`;
+
+    // Construct the final object to return after a successful insert.
+    const newClient: Client = {
+      ...clientData,
+      id: newId,
+      avatarUrl: avatarUrl,
+      projectsCount: 0,
+    };
 
     return newClient;
 }
 
 export async function updateClient(id: string, clientData: ClientUpdateDto): Promise<Client | undefined> {
     const pool = await getDb();
-    if (!pool) return undefined;
     
     const setClauses = Object.keys(clientData)
     .map(key => `${key} = @${key}`)
@@ -149,7 +128,16 @@ export async function updateClient(id: string, clientData: ClientUpdateDto): Pro
 
     const request = pool.request().input('id', sql.NVarChar, id);
     for (const [key, value] of Object.entries(clientData)) {
-        request.input(key, sql.NVarChar, value as string);
+        // Ensure that the type is correctly inferred for mssql
+        let fieldType;
+        switch(typeof value) {
+            case 'number':
+                fieldType = sql.Int;
+                break;
+            default:
+                fieldType = sql.NVarChar;
+        }
+        request.input(key, fieldType, value);
     }
 
     await request.query(`UPDATE Clients SET ${setClauses} WHERE id = @id`);
@@ -163,7 +151,6 @@ export async function updateClient(id: string, clientData: ClientUpdateDto): Pro
 
 export async function deleteClient(id: string): Promise<void> {
     const pool = await getDb();
-    if (!pool) return;
     await pool.request()
     .input('id', sql.NVarChar, id)
     .query`DELETE FROM Clients WHERE id = @id`;
