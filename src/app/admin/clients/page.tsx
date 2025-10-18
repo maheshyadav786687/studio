@@ -4,6 +4,7 @@ import { PlusCircle } from "lucide-react";
 import { ClientDialog } from "@/components/clients/client-dialog";
 import type { Client } from "@/lib/types";
 import { getClients as fetchClientsFromBll } from "@/lib/bll/client-bll";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 async function getClients(): Promise<Client[]> {
   try {
@@ -36,7 +37,15 @@ export default async function ClientsPage() {
             </ClientDialog>
         </div>
       </div>
-      <ClientsTable clients={clients} />
+      <Card>
+          <CardHeader>
+              <CardTitle>Client List</CardTitle>
+              <CardDescription>A list of all clients in your system.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ClientsTable clients={clients} />
+          </CardContent>
+      </Card>
     </div>
   );
 }
