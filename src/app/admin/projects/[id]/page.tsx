@@ -1,14 +1,29 @@
 import { notFound } from 'next/navigation';
-import { projects } from '@/lib/data';
 
 import { ProjectHeader } from '@/components/projects/project-header';
 import { TaskList } from '@/components/projects/task-list';
 import { ProgressUpdates } from '@/components/projects/progress-updates';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import type { Project } from '@/lib/types';
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
-    const project = projects.find(p => p.id === params.id);
+async function getProject(id: string): Promise<Project | null> {
+    try {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/projects/${id}`, { cache: 'no-store' });
+        if (!res.ok) {
+            if (res.status === 404) return null;
+            throw new Error('Failed to fetch project');
+        }
+        return res.json();
+    } catch (error) {
+        console.error("Error fetching project:", error);
+        return null;
+    }
+}
+
+
+export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
+    const project = await getProject(params.id);
 
     if (!project) {
         notFound();

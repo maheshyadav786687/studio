@@ -24,13 +24,14 @@ export async function generateSummaryAction(prevState: any, formData: FormData) 
   }
 
   try {
+    // API Layer calls the BLL (summarizeUpdate)
     const { summary } = await summarizeUpdate({ updateText: validatedFields.data.updateText });
     
     // In a real app, you would save the new update and summary to the database here.
     // For this demo, we'll just revalidate the path to simulate an update.
     revalidatePath(`/admin/projects/${validatedFields.data.projectId}`);
 
-    // We return the original content and the new summary so the UI can update optimistically.
+    // The API layer returns a DTO to the UIL
     return { 
         message: 'Summary generated successfully.', 
         summary: summary,
