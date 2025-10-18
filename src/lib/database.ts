@@ -1,7 +1,7 @@
 'use server';
 
-import { contractors, projects } from './data';
-import type { Contractor, Project } from './types';
+import { projects as mockProjects } from './data';
+import type { Project } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 /**
@@ -14,29 +14,11 @@ const dbDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const getImageUrl = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
 
+// Re-map projects to ensure they have the correct shape after type changes
+const projects: Project[] = mockProjects.map(p => ({...p}));
+
+
 export const db = {
-  contractors: {
-    findMany: async (): Promise<Contractor[]> => {
-      await dbDelay(100);
-      return [];
-    },
-    findById: async (id: string): Promise<Contractor | undefined> => {
-      await dbDelay(100);
-      return undefined;
-    },
-    create: async (data: Omit<Contractor, 'id' | 'avatarUrl' | 'performance' | 'phone'>): Promise<Contractor> => {
-        await dbDelay(100);
-        // This will no longer do anything, returning a dummy object
-        const newContractor: Contractor = {
-            id: `c${contractors.length + 1}`,
-            ...data,
-            phone: '', 
-            performance: 0,
-            avatarUrl: '',
-        };
-        return newContractor;
-    }
-  },
   projects: {
     findMany: async (): Promise<Project[]> => {
       await dbDelay(100);

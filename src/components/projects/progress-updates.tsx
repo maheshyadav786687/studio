@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { format } from 'date-fns';
 
@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-import type { Project, ProjectUpdate as ProjectUpdateType } from "@/lib/types";
+import type { Project, ProjectUpdate } from "@/lib/types";
 import { generateSummaryAction } from '@/app/admin/projects/[id]/actions';
 
 type ProgressUpdatesProps = {
@@ -29,7 +29,7 @@ function SubmitButton() {
 }
 
 export function ProgressUpdates({ project }: ProgressUpdatesProps) {
-    const [updates, setUpdates] = useState<ProjectUpdateType[]>(project.updates);
+    const [updates, setUpdates] = useState<ProjectUpdate[]>(project.updates);
     const formRef = useRef<HTMLFormElement>(null);
 
     const initialState = { message: null, summary: null, errors: {}, originalContent: null };
@@ -37,7 +37,7 @@ export function ProgressUpdates({ project }: ProgressUpdatesProps) {
 
     useEffect(() => {
         if (state.message === 'Summary generated successfully.' && state.summary && state.originalContent) {
-            const newUpdate: ProjectUpdateType = {
+            const newUpdate: ProjectUpdate = {
                 id: `update-${Date.now()}`,
                 date: new Date().toISOString(),
                 content: state.originalContent,

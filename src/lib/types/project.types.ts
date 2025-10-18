@@ -1,14 +1,3 @@
-export type Contractor = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  skills: string[];
-  availability: 'Available' | 'On Project' | 'Unavailable';
-  avatarUrl: string;
-  performance: number;
-};
-
 export type Task = {
   id: string;
   title: string;

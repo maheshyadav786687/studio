@@ -1,9 +1,7 @@
-import type { Contractor, Project } from './types';
+import type { Project } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const getImageUrl = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
-
-export const contractors: Contractor[] = [];
 
 export const projects: Project[] = [
   {
