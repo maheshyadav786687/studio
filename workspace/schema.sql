@@ -30,3 +30,12 @@ CREATE TABLE Projects (
     contractorIds NVARCHAR(MAX) DEFAULT '[]'
 );
 GO
+
+-- Create the Sites table
+CREATE TABLE Sites (
+  id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  name NVARCHAR(255) NOT NULL,
+  address NVARCHAR(MAX) NOT NULL,
+  clientId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Clients(id)
+);
+GO

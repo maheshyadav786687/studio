@@ -1,6 +1,8 @@
 
 import { PlusCircle } from "lucide-react"
 
+export const dynamic = 'force-dynamic';
+
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/projects/project-card"
 import type { Project } from "@/lib/types";

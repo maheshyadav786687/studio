@@ -66,6 +66,28 @@ db.serialize(() => {
   }
   projectStmt.finalize();
 
+  db.run(`CREATE TABLE IF NOT EXISTS Sites (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    address TEXT NOT NULL,
+    clientId TEXT,
+    FOREIGN KEY (clientId) REFERENCES Clients(id)
+  )`, (err) => {
+    if (err) {
+      console.error("Error creating Sites table:", err.message);
+    }
+  });
+
+  const sites = [
+    { id: 's1', name: 'Main Office', address: '123 Main St', clientId: 'c1' },
+    { id: 's2', name: 'Warehouse', address: '456 Industrial Ave', clientId: 'c2' },
+  ];
+  const siteStmt = db.prepare("INSERT OR IGNORE INTO Sites (id, name, address, clientId) VALUES (?, ?, ?, ?)");
+  for (const site of sites) {
+    siteStmt.run(site.id, site.name, site.address, site.clientId);
+  }
+  siteStmt.finalize();
+
   db.close((err) => {
     if (err) {
       console.error(err.message);

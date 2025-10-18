@@ -1,10 +1,10 @@
-
 'use server';
 import sqlite3 from 'sqlite3';
 import { open } from 'sqlite';
 import { join } from 'path';
 
 let db: Awaited<ReturnType<typeof open>> | null = null;
+let seedingDone = false;
 
 async function getSqliteDb() {
   if (db) {
@@ -29,6 +29,11 @@ async function getSqliteDb() {
 
 async function initializeDb(db: Awaited<ReturnType<typeof open>>) {
   await db.exec(`
+    DROP TABLE IF EXISTS Quotations;
+    DROP TABLE IF EXISTS Projects;
+    DROP TABLE IF EXISTS Sites;
+    DROP TABLE IF EXISTS Clients;
+
     CREATE TABLE IF NOT EXISTS Clients (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
@@ -76,6 +81,10 @@ async function initializeDb(db: Awaited<ReturnType<typeof open>>) {
     );
   `);
 
+  if (seedingDone) {
+    return;
+  }
+
   const clientsCount = await db.get('SELECT COUNT(*) as count FROM Clients');
   if (clientsCount.count === 0) {
     const clients = [
@@ -114,7 +123,7 @@ async function initializeDb(db: Awaited<ReturnType<typeof open>>) {
       { id: 'p3', name: 'E-commerce Platform', description: 'Building a scalable e-commerce platform with advanced features.', startDate: '2024-07-01', deadline: '2025-01-31', cost: 2500000, status: 'Not Started', siteId: 'site-3', clientId: 'cl-1', imageUrl: 'https://picsum.photos/seed/project3/600/400' },
       { id: 'p4', name: 'Internal CRM Tool', description: 'An internal tool for customer relationship management.', startDate: '2024-03-01', deadline: '2024-07-30', cost: 800000, status: 'Completed', siteId: 'site-1', clientId: 'cl-1', imageUrl: 'https://picsum.photos/seed/project4/600/400' }
     ];
-    const projectStmt = await db.prepare("INSERT INTO Projects (id, name, description, startDate, deadline, cost, status, siteId, clientId, imageUrl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    const projectStmt = await db.prepare("INSERT INTO Projects (id, name, description, startDate, deadline, cost, status, siteId, clientId, imageUrl, tasks, updates) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
     for (const p of projects) {
         // Here we add some default tasks and updates as stringified JSON
         const tasks = JSON.stringify([
@@ -142,6 +151,8 @@ async function initializeDb(db: Awaited<ReturnType<typeof open>>) {
         }
         await quoteStmt.finalize();
     }
+
+  seedingDone = true;
 }
 
 export async function getDb() {
