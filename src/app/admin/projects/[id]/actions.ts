@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
+import { summarizeUpdate } from '@/ai/flows/summarize-flow';
 
 const summarySchema = z.object({
   updateText: z.string().min(10, 'Update must be at least 10 characters long.'),
@@ -18,22 +19,30 @@ export async function generateSummaryAction(prevState: any, formData: FormData) 
     return {
       message: 'Validation failed.',
       errors: validatedFields.error.flatten().fieldErrors,
+      summary: null,
     };
   }
 
   try {
-    // AI summarization logic would go here.
-    // Since the flow was removed, we'll return a placeholder.
-    const summary = `This is a placeholder AI summary for the update: "${validatedFields.data.updateText.substring(0, 50)}..."`;
+    const { summary } = await summarizeUpdate({ updateText: validatedFields.data.updateText });
     
     // In a real app, you would save the new update and summary to the database here.
-    // For this demo, we just return the summary.
-    // We'll also revalidate the path to show the update if we were persisting it.
+    // For this demo, we'll just revalidate the path to simulate an update.
     revalidatePath(`/admin/projects/${validatedFields.data.projectId}`);
 
-    return { message: 'Summary generated successfully.', summary };
+    // We return the original content and the new summary so the UI can update optimistically.
+    return { 
+        message: 'Summary generated successfully.', 
+        summary: summary,
+        originalContent: validatedFields.data.updateText,
+    };
+
   } catch (error) {
     console.error(error);
-    return { message: 'Failed to generate summary.', summary: null };
+    return { 
+        message: 'Failed to generate summary.', 
+        summary: null,
+        originalContent: validatedFields.data.updateText,
+    };
   }
 }
