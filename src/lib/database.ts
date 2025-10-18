@@ -2,35 +2,12 @@
 
 // DAL (Data Access Layer) - MS SQL IMPLEMENTATION
 // This layer is responsible for all communication with the database.
-require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
 
 import sql from 'mssql';
+import { getDb } from './db-provider';
 import type { Project, Client } from './types';
 import type { ClientCreateDto, ClientUpdateDto } from './bll/client-bll';
 
-const config = {
-  connectionString: process.env.DATABASE_URL,
-};
-
-let pool: sql.ConnectionPool | null = null;
-
-async function getDb(): Promise<sql.ConnectionPool> {
-  if (pool && pool.connected) {
-    return pool;
-  }
-  if (!config.connectionString) {
-    // Throw an error if the connection string is not set.
-    throw new Error("DATABASE_URL environment variable is not set. The application cannot connect to the database.");
-  }
-  try {
-    pool = await sql.connect(config.connectionString);
-    return pool;
-  } catch (err) {
-    console.error('Database connection failed:', err);
-    // Important: re-throw the error to ensure the calling function knows about the failure.
-    throw new Error('Failed to connect to the database.');
-  }
-}
 
 // --- Project Functions ---
 
@@ -38,6 +15,7 @@ export async function findManyProjects(): Promise<Project[]> {
     const db = await getDb();
     const result = await db.request().query('SELECT * FROM Projects');
     // In a real app, you would parse tasks and updates which might be stored as JSON
+    // For now, returning empty arrays for simplicity.
     return result.recordset.map(p => ({ ...p, tasks: [], updates: [] }));
 }
 
@@ -130,15 +108,33 @@ export async function updateClient(id: string, clientData: ClientUpdateDto): Pro
         .input('status', sql.VarChar, clientData.status)
         .query(`
             UPDATE Clients
-            SET name = @name, email = @email, phone = @phone, company = @company, status = @status
+            SET name = ISNULL(@name, name), 
+                email = ISNULL(@email, email), 
+                phone = ISNULL(@phone, phone), 
+                company = ISNULL(@company, company), 
+                status = ISNULL(@status, status)
             OUTPUT INSERTED.*
             WHERE id = @id
         `);
-    return result.recordset[0];
+     
+    if (result.recordset.length > 0) {
+      // We need to get the project count as the UPDATE query doesn't return it.
+      const projectsResult = await db.request()
+        .input('id', sql.VarChar, id)
+        .query('SELECT COUNT(*) as projectsCount FROM Projects WHERE clientId = @id');
+      const projectsCount = projectsResult.recordset[0].projectsCount;
+      return { ...result.recordset[0], projectsCount };
+    }
+
+    return undefined;
 }
 
 export async function deleteClient(id: string): Promise<void> {
     const db = await getDb();
+    
+    // You might want to handle related projects first, e.g., set clientId to NULL or delete them.
+    // For this example, we'll just delete the client.
+    
     await db.request()
         .input('id', sql.VarChar, id)
         .query('DELETE FROM Clients WHERE id = @id');
