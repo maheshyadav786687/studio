@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 export const SubtaskSchema = z.object({
@@ -63,13 +64,3 @@ export const ProjectSchema = z.object({
   approvedQuotationIds: z.array(z.string()), // References to approved quotations
 });
 export type Project = z.infer<typeof ProjectSchema>;
-
-export const SiteSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  address: z.string(),
-  clientId: z.string(),
-  quotations: z.array(QuotationSchema).optional(),
-  projects: z.array(ProjectSchema).optional(),
-});
-export type Site = z.infer<typeof SiteSchema>;

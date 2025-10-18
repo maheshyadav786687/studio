@@ -5,8 +5,9 @@
 // This layer is responsible for all communication with the database.
 
 import { getDb } from './db-provider';
-import type { Project, Client } from './types';
+import type { Project, Client, Site, SiteFormData } from './types';
 import type { ClientCreateDto, ClientUpdateDto } from './bll/client-bll';
+import type { SiteCreateDto, SiteUpdateDto } from './bll/site-bll';
 
 
 // --- Project Functions ---
@@ -47,6 +48,17 @@ export async function findManyClients(): Promise<Client[]> {
     return result;
 }
 
+export async function findClientById(id: string): Promise<Client | undefined> {
+    const db = await getDb();
+    const client = await db.get('SELECT * FROM Clients WHERE id = ?', id);
+    if (!client) return undefined;
+
+    const projectsCountResult = await db.get('SELECT COUNT(*) as projectsCount FROM Projects WHERE clientId = ?', id);
+    client.projectsCount = projectsCountResult.projectsCount || 0;
+    
+    return client;
+}
+
 export async function findClientByEmail(email: string): Promise<Client | undefined> {
     const db = await getDb();
     const result = await db.get('SELECT * FROM Clients WHERE email = ?', email);
@@ -55,16 +67,18 @@ export async function findClientByEmail(email: string): Promise<Client | undefin
 
 export async function createClient(clientData: ClientCreateDto): Promise<Client> {
    const db = await getDb();
-   const avatarUrl = `https://picsum.photos/seed/${Date.now()}/100/100`;
+   const id = `cl-${Date.now()}`;
+   const avatarUrl = `https://picsum.photos/seed/${id}/100/100`;
 
    const query = `
-    INSERT INTO Clients (name, email, phone, company, status, avatarUrl)
-    VALUES (?, ?, ?, ?, ?, ?);
+    INSERT INTO Clients (id, name, email, phone, company, status, avatarUrl)
+    VALUES (?, ?, ?, ?, ?, ?, ?);
    `;
 
    try {
-     const result = await db.run(
+     await db.run(
        query,
+       id,
        clientData.name,
        clientData.email,
        clientData.phone,
@@ -73,8 +87,8 @@ export async function createClient(clientData: ClientCreateDto): Promise<Client>
        avatarUrl
      );
 
-    const newClient = await db.get('SELECT * FROM Clients WHERE id = ?', result.lastID);
-    return { ...newClient, projectsCount: 0 };
+    const newClient = await findClientById(id);
+    return newClient!;
 
    } catch (error) {
      console.error("Failed to create client in database:", error);
@@ -87,11 +101,11 @@ export async function updateClient(id: string, clientData: ClientUpdateDto): Pro
     const db = await getDb();
     const query = `
             UPDATE Clients
-            SET name = IFNULL(?, name), 
-                email = IFNULL(?, email), 
-                phone = IFNULL(?, phone), 
-                company = IFNULL(?, company), 
-                status = IFNULL(?, status)
+            SET name = COALESCE(?, name), 
+                email = COALESCE(?, email), 
+                phone = COALESCE(?, phone), 
+                company = COALESCE(?, company), 
+                status = COALESCE(?, status)
             WHERE id = ?
         `;
     await db.run(
@@ -104,17 +118,100 @@ export async function updateClient(id: string, clientData: ClientUpdateDto): Pro
         id
     );
      
-    const updatedClient = await db.get('SELECT * FROM Clients WHERE id = ?', id);
-    if (updatedClient) {
-      const projectsResult = await db.get('SELECT COUNT(*) as projectsCount FROM Projects WHERE clientId = ?', id);
-      const projectsCount = projectsResult.projectsCount;
-      return { ...updatedClient, projectsCount };
-    }
-
-    return undefined;
+    return await findClientById(id);
 }
 
 export async function deleteClient(id: string): Promise<void> {
     const db = await getDb();
     await db.run('DELETE FROM Clients WHERE id = ?', id);
+}
+
+// --- Site Functions ---
+
+export async function findManySites(): Promise<Site[]> {
+  const db = await getDb();
+  const query = `
+    SELECT 
+      s.*,
+      c.name as clientName,
+      c.email as clientEmail
+    FROM Sites s
+    JOIN Clients c ON s.clientId = c.id;
+  `;
+  const results = await db.all(query);
+  return results.map(row => ({
+    id: row.id,
+    name: row.name,
+    address: row.address,
+    clientId: row.clientId,
+    client: {
+        id: row.clientId,
+        name: row.clientName,
+        email: row.clientEmail,
+        phone: '', 
+        company: '',
+        avatarUrl: '',
+        projectsCount: 0,
+        status: 'Active'
+    }
+  }));
+}
+
+export async function findSiteById(id: string): Promise<Site | undefined> {
+    const db = await getDb();
+    const query = `
+        SELECT s.*, c.name as clientName, c.email as clientEmail
+        FROM Sites s
+        JOIN Clients c ON s.clientId = c.id
+        WHERE s.id = ?
+    `;
+    const row = await db.get(query, id);
+    if (!row) return undefined;
+    
+    return {
+        id: row.id,
+        name: row.name,
+        address: row.address,
+        clientId: row.clientId,
+        client: {
+            id: row.clientId,
+            name: row.clientName,
+            email: row.clientEmail,
+            phone: '',
+            company: '',
+            avatarUrl: '',
+            projectsCount: 0,
+            status: 'Active'
+        }
+    };
+}
+
+export async function createSite(siteData: SiteCreateDto): Promise<Site> {
+    const db = await getDb();
+    const id = `site-${Date.now()}`;
+    const query = `
+        INSERT INTO Sites (id, name, address, clientId)
+        VALUES (?, ?, ?, ?);
+    `;
+    await db.run(query, id, siteData.name, siteData.address, siteData.clientId);
+    const newSite = await findSiteById(id);
+    return newSite!;
+}
+
+export async function updateSite(id: string, siteData: SiteUpdateDto): Promise<Site | undefined> {
+    const db = await getDb();
+    const query = `
+        UPDATE Sites
+        SET name = COALESCE(?, name),
+            address = COALESCE(?, address),
+            clientId = COALESCE(?, clientId)
+        WHERE id = ?;
+    `;
+    await db.run(query, siteData.name, siteData.address, siteData.clientId, id);
+    return await findSiteById(id);
+}
+
+export async function deleteSite(id: string): Promise<void> {
+    const db = await getDb();
+    await db.run('DELETE FROM Sites WHERE id = ?', id);
 }

@@ -1,3 +1,4 @@
+
 // BLL (Business Logic Layer)
 // This layer contains the core business logic.
 // It acts as an intermediary between the API layer and the DAL.
@@ -9,11 +10,12 @@ import {
     createClient as createDbClient,
     updateClient as updateDbClient,
     deleteClient as deleteDbClient,
-    findClientByEmail
+    findClientByEmail,
+    findClientById
 } from '@/lib/database';
 import type { Client } from '@/lib/types';
 
-export type ClientCreateDto = Omit<Client, 'id' | 'avatarUrl' | 'projectsCount'>;
+export type ClientCreateDto = Omit<Client, 'id' | 'avatarUrl' | 'projectsCount' | 'sites'>;
 export type ClientUpdateDto = Partial<ClientCreateDto>;
 
 
@@ -24,6 +26,11 @@ export async function getClients(): Promise<Client[]> {
   // Here you could add business logic, e.g., filtering, sorting, transforming data.
   // For now, we'll just return the DTOs from the DAL.
   return clients;
+}
+
+// BLL function to get a single client
+export async function getClientById(id: string): Promise<Client | undefined> {
+    return await findClientById(id);
 }
 
 // BLL function to create a client

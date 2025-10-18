@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
@@ -20,7 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Client, ClientSchema } from '@/lib/types';
+import { Client, ClientFormSchema } from '@/lib/types';
 import { createClient, updateClient } from '@/lib/services/client-api-service';
 
 type ClientDialogProps = {
@@ -31,8 +32,7 @@ type ClientDialogProps = {
 };
 
 // DTO for the form
-const FormSchema = ClientSchema.omit({ id: true, avatarUrl: true, projectsCount: true });
-export type ClientFormData = z.infer<typeof FormSchema>;
+type ClientFormData = z.infer<typeof ClientFormSchema>;
 
 export function ClientDialog({ client, children, onOpenChange, open: parentOpen }: ClientDialogProps) {
   const [open, setOpen] = useState(false);
@@ -46,7 +46,7 @@ export function ClientDialog({ client, children, onOpenChange, open: parentOpen 
     reset,
     control,
   } = useForm<ClientFormData>({
-    resolver: zodResolver(FormSchema),
+    resolver: zodResolver(ClientFormSchema),
     defaultValues: {
       name: client?.name || '',
       email: client?.email || '',
@@ -134,20 +134,26 @@ export function ClientDialog({ client, children, onOpenChange, open: parentOpen 
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Status</Label>
-              <RadioGroup
-                defaultValue={client?.status || 'Active'}
-                className="col-span-3 flex gap-4"
-                onValueChange={(value) => control._fields.status?.onChange(value)}
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Active" id="status-active" {...register('status')} />
-                  <Label htmlFor="status-active">Active</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="Inactive" id="status-inactive" {...register('status')} />
-                  <Label htmlFor="status-inactive">Inactive</Label>
-                </div>
-              </RadioGroup>
+               <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="col-span-3 flex gap-4"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Active" id="status-active" />
+                      <Label htmlFor="status-active">Active</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="Inactive" id="status-inactive" />
+                      <Label htmlFor="status-inactive">Inactive</Label>
+                    </div>
+                  </RadioGroup>
+                )}
+              />
             </div>
           </div>
           <DialogFooter>

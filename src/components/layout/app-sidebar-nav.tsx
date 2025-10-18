@@ -51,7 +51,7 @@ const navItems = [
     icon: Users,
     subItems: [
       { href: "/admin/clients", icon: Users, label: "Clients" },
-      { href: "#", icon: Building2, label: "Sites" },
+      { href: "/admin/sites", icon: Building2, label: "Sites" },
       { href: "#", icon: FileText, label: "Quotes" },
       { href: "#", icon: ClipboardList, label: "Work Orders" },
     ],
@@ -212,14 +212,10 @@ export function AppSidebarNav() {
             // Render a non-interactive version on the server to prevent mismatch
             <div className="w-full px-2 lg:px-4 space-y-1 py-2">
                 {navItems.map(item => (
-                    item.subItems ? (
-                        <div key={item.label} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground">
-                             <item.icon className="h-4 w-4" />
-                            <span>{item.label}</span>
-                        </div>
-                    ) : (
-                        <NavLink key={item.label} item={item} pathname={pathname} />
-                    )
+                    <div key={item.label} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground">
+                         <item.icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                    </div>
                 ))}
             </div>
         )}

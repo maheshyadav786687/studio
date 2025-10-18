@@ -1,6 +1,7 @@
+
 import { NextResponse } from 'next/server';
 import { getClients, createClient } from '@/lib/bll/client-bll';
-import { ClientSchema } from '@/lib/types';
+import { ClientFormSchema } from '@/lib/types';
 
 export async function GET() {
   try {
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
   try {
     const json = await req.json();
     // API layer validates the DTO
-    const validatedFields = ClientSchema.omit({ id: true, avatarUrl: true, projectsCount: true }).safeParse(json);
+    const validatedFields = ClientFormSchema.safeParse(json);
     
     if (!validatedFields.success) {
       return NextResponse.json({ error: 'Invalid fields', details: validatedFields.error.flatten() }, { status: 400 });
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
     return NextResponse.json(newClient, { status: 201 });
   } catch (error) {
     console.error('[API_CLIENTS_POST]', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
+    return new NextResponse(errorMessage, { status: 500 });
   }
 }

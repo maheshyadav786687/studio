@@ -1,5 +1,9 @@
+
 import { z } from 'zod';
-import type { Site } from './project.types';
+
+// We have to import the schemas this way to avoid circular dependencies.
+// We can't use a barrel file (index.ts) in this case.
+import { SiteSchema } from './site.types';
 
 export const ClientSchema = z.object({
   id: z.string(),
@@ -15,17 +19,5 @@ export const ClientSchema = z.object({
 
 export type Client = z.infer<typeof ClientSchema>;
 
-// This is the DTO for the form, which doesn't include server-generated fields.
 export const ClientFormSchema = ClientSchema.omit({ id: true, avatarUrl: true, projectsCount: true, sites: true });
 export type ClientFormData = z.infer<typeof ClientFormSchema>;
-
-// Forward-declare SiteSchema here to avoid circular dependency issues if needed, though lazy should handle it.
-const SiteSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  address: z.string(),
-  clientId: z.string(),
-  quotations: z.array(z.lazy(() => QuotationSchema)).optional(),
-  projects: z.array(z.lazy(() => ProjectSchema)).optional(),
-});
-import { ProjectSchema, QuotationSchema } from './project.types';

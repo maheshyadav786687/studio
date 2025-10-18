@@ -1,30 +1,27 @@
 
-// Frontend API Service Layer for Clients
-// This layer abstracts all API calls to the backend for the UIL.
+// Frontend API Service Layer for Sites
 
-import type { Client } from '@/lib/types';
-import type { ClientFormData } from '@/lib/types/client.types';
+import type { Site, SiteFormData } from '@/lib/types';
 
-const BASE_URL = '/api/clients';
+const BASE_URL = '/api/sites';
 
 async function handleResponse(response: Response) {
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    // For 204 No Content, there's no body to parse
     if (response.status === 204) {
         return;
     }
     return response.json();
 }
 
-export async function getClients(): Promise<Client[]> {
+export async function getSites(): Promise<Site[]> {
     const response = await fetch(BASE_URL, { cache: 'no-store' });
     return handleResponse(response);
 }
 
-export async function createClient(data: ClientFormData): Promise<Client> {
+export async function createSite(data: SiteFormData): Promise<Site> {
     const response = await fetch(BASE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -33,7 +30,7 @@ export async function createClient(data: ClientFormData): Promise<Client> {
     return handleResponse(response);
 }
 
-export async function updateClient(id: string, data: Partial<ClientFormData>): Promise<Client> {
+export async function updateSite(id: string, data: Partial<SiteFormData>): Promise<Site> {
     const response = await fetch(`${BASE_URL}/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -42,7 +39,7 @@ export async function updateClient(id: string, data: Partial<ClientFormData>): P
     return handleResponse(response);
 }
 
-export async function deleteClient(id: string): Promise<void> {
+export async function deleteSite(id: string): Promise<void> {
     const response = await fetch(`${BASE_URL}/${id}`, {
         method: 'DELETE',
     });
