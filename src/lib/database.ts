@@ -45,7 +45,6 @@ export async function findManyProjects(): Promise<Project[]> {
         ...p,
         tasks: JSON.parse(p.tasks || '[]'),
         updates: JSON.parse(p.updates || '[]'),
-        contractorIds: JSON.parse(p.contractorIds || '[]'),
     })) as Project[];
 }
 
@@ -63,7 +62,6 @@ export async function findProjectById(id: string): Promise<Project | undefined> 
         ...p,
         tasks: JSON.parse(p.tasks || '[]'),
         updates: JSON.parse(p.updates || '[]'),
-        contractorIds: JSON.parse(p.contractorIds || '[]'),
     } as Project;
 }
 
@@ -91,30 +89,34 @@ export async function findClientByEmail(email: string): Promise<Client | undefin
 }
 
 export async function createClient(clientData: ClientCreateDto): Promise<Client> {
-    const pool = await getDb(); // This will now throw an error if it can't connect
+    const pool = await getDb();
     const newId = `cl${Date.now()}`;
     const avatarUrl = `https://picsum.photos/seed/${Date.now()}/100/100`;
 
-    // Await the query to ensure it completes before returning.
-    await pool.request()
-    .input('id', sql.NVarChar, newId)
-    .input('name', sql.NVarChar, clientData.name)
-    .input('email', sql.NVarChar, clientData.email)
-    .input('phone', sql.NVarChar, clientData.phone)
-    .input('company', sql.NVarChar, clientData.company)
-    .input('avatarUrl', sql.NVarChar, avatarUrl)
-    .input('status', sql.NVarChar, clientData.status)
-    .query`INSERT INTO Clients (id, name, email, phone, company, avatarUrl, status, projectsCount) VALUES (@id, @name, @email, @phone, @company, @avatarUrl, @status, 0)`;
+    try {
+        await pool.request()
+            .input('id', sql.NVarChar, newId)
+            .input('name', sql.NVarChar, clientData.name)
+            .input('email', sql.NVarChar, clientData.email)
+            .input('phone', sql.NVarChar, clientData.phone)
+            .input('company', sql.NVarChar, clientData.company)
+            .input('avatarUrl', sql.NVarChar, avatarUrl)
+            .input('status', sql.NVarChar, clientData.status)
+            .query`INSERT INTO Clients (id, name, email, phone, company, avatarUrl, status, projectsCount) VALUES (@id, @name, @email, @phone, @company, @avatarUrl, @status, 0)`;
 
-    // Construct the final object to return after a successful insert.
-    const newClient: Client = {
-      ...clientData,
-      id: newId,
-      avatarUrl: avatarUrl,
-      projectsCount: 0,
-    };
+        const newClient: Client = {
+          ...clientData,
+          id: newId,
+          avatarUrl: avatarUrl,
+          projectsCount: 0,
+        };
 
-    return newClient;
+        return newClient;
+    } catch (err) {
+        console.error("Failed to insert client into database:", err);
+        // Ensure a meaningful error is thrown to the BLL/API layers
+        throw new Error(`Database query failed. Could not create client. Make sure the 'Clients' table exists and check columns. Original error: ${err instanceof Error ? err.message : String(err)}`);
+    }
 }
 
 export async function updateClient(id: string, clientData: ClientUpdateDto): Promise<Client | undefined> {
