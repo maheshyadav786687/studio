@@ -167,6 +167,11 @@ export function SitesTable({ sites }: { sites: Site[] }) {
       sorting,
       columnFilters,
     },
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      }
+    }
   });
 
   return (
