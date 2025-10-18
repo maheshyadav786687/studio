@@ -171,7 +171,7 @@ export function SitesTable({ sites }: { sites: Site[] }) {
 
   return (
     <Card>
-      <CardContent className="p-6">
+      <CardContent>
         <div className="flex items-center justify-between py-4">
           <Input
             placeholder="Filter sites by name..."
