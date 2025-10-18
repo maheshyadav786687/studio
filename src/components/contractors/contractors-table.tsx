@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 
 export function ContractorsTable() {
-  const { contractors, isLoading, error } = useContractors();
+  const { contractors, isLoading, error, mutate } = useContractors();
 
   if (isLoading) {
     return (
@@ -89,7 +89,7 @@ export function ContractorsTable() {
                       </Badge>
                   </TableCell>
                   <TableCell>
-                      <ContractorDialog contractor={contractor}>
+                      <ContractorDialog contractor={contractor} onSuccess={mutate}>
                           <Button aria-haspopup="true" size="icon" variant="ghost">
                               <MoreHorizontal className="h-4 w-4" />
                               <span className="sr-only">Toggle menu</span>

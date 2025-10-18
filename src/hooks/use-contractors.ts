@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Contractor } from '@/lib/types';
 
 export function useContractors() {
@@ -6,28 +6,30 @@ export function useContractors() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
-    async function fetchContractors() {
-      try {
-        const response = await fetch('/api/contractors');
-        if (!response.ok) {
-          throw new Error('Failed to fetch contractors');
-        }
-        const data = await response.json();
-        setContractors(data);
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-            setError(err);
-        } else {
-            setError(new Error('An unknown error occurred'));
-        }
-      } finally {
-        setIsLoading(false);
+  const fetchContractors = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/contractors');
+      if (!response.ok) {
+        throw new Error('Failed to fetch contractors');
       }
+      const data = await response.json();
+      setContractors(data);
+      setError(null);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+          setError(err);
+      } else {
+          setError(new Error('An unknown error occurred'));
+      }
+    } finally {
+      setIsLoading(false);
     }
-
-    fetchContractors();
   }, []);
 
-  return { contractors, isLoading, error };
+  useEffect(() => {
+    fetchContractors();
+  }, [fetchContractors]);
+
+  return { contractors, isLoading, error, mutate: fetchContractors };
 }

@@ -1,17 +1,18 @@
+'use client';
 import { PlusCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card"
 import { ContractorsTable } from "@/components/contractors/contractors-table"
 import { ContractorDialog } from "@/components/contractors/contractor-dialog"
+import { useContractors } from "@/hooks/use-contractors";
 
 export default function ContractorsPage() {
+  const { mutate } = useContractors();
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center">
@@ -20,7 +21,7 @@ export default function ContractorsPage() {
           <p className="text-muted-foreground">Manage your team of skilled contractors.</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <ContractorDialog>
+          <ContractorDialog onSuccess={mutate}>
              <Button size="sm" className="h-8 gap-1">
                 <PlusCircle className="h-3.5 w-3.5" />
                 <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
