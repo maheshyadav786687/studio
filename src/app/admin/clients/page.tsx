@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { ClientDialog } from "@/components/clients/client-dialog";
 import type { Client } from "@/lib/types";
-import { getClients as fetchClients } from "@/lib/services/client-api-service";
+import { getClients as fetchClientsFromBll } from "@/lib/bll/client-bll";
 
 async function getClients(): Promise<Client[]> {
   try {
-    // UIL calls the Frontend API Service
-    return await fetchClients();
+    // UIL on the server calls the BLL directly
+    return await fetchClientsFromBll();
   } catch (error) {
     console.error("Error fetching clients:", error);
     return []; // Return empty array on error
