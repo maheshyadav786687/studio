@@ -14,9 +14,11 @@ export const SiteSchema = z.object({
   quotations: z.array(z.lazy(() => QuotationSchema)).optional(),
   projects: z.array(z.lazy(() => ProjectSchema)).optional(),
   client: z.lazy(() => ClientSchema).optional(),
+  projectsCount: z.number().int().optional(),
+  quotationsCount: z.number().int().optional(),
 });
 
 export type Site = z.infer<typeof SiteSchema>;
 
-export const SiteFormSchema = SiteSchema.omit({ id: true, quotations: true, projects: true, client: true });
+export const SiteFormSchema = SiteSchema.omit({ id: true, quotations: true, projects: true, client: true, projectsCount: true, quotationsCount: true });
 export type SiteFormData = z.infer<typeof SiteFormSchema>;

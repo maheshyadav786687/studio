@@ -81,7 +81,7 @@ export const columns: ColumnDef<Site>[] = [
       cell: ({ row }) => <div className="pl-4">{row.original.client?.name || 'N/A'}</div>,
   },
   {
-    accessorKey: 'projectsCount',
+    id: 'counts',
     header: ({ column }) => {
         return (
             <div className="text-center">
@@ -89,14 +89,24 @@ export const columns: ColumnDef<Site>[] = [
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                 >
-                    Projects
+                    Counts
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             </div>
         );
     },
     cell: ({ row }) => {
-        return <div className="text-center">{row.original.projects?.length || 0}</div>
+        const site = row.original;
+        return (
+            <div className="text-center space-y-1">
+                <div className="text-xs">
+                    <span className="font-semibold">{site.projectsCount || 0}</span> Projects
+                </div>
+                <div className="text-xs text-muted-foreground">
+                    <span className="font-semibold">{site.quotationsCount || 0}</span> Quotes
+                </div>
+            </div>
+        );
     }
   },
   {

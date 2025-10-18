@@ -23,7 +23,10 @@ export async function findProjectById(id: string): Promise<Project | undefined> 
     const db = await getDb();
     const result = await db.get('SELECT * FROM Projects WHERE id = ?', id);
     if (result) {
-      return { ...result, tasks: [], updates: [] };
+      // The tasks and updates are stored as JSON strings. We need to parse them.
+      const tasks = JSON.parse(result.tasks || '[]');
+      const updates = JSON.parse(result.updates || '[]');
+      return { ...result, tasks, updates };
     }
     return undefined;
 }
@@ -36,13 +39,19 @@ export async function findManyClients(): Promise<Client[]> {
     const query = `
       SELECT 
         c.*, 
-        IFNULL(p.projectsCount, 0) as projectsCount 
+        IFNULL(p.projectsCount, 0) as projectsCount,
+        IFNULL(s.sitesCount, 0) as sitesCount
       FROM Clients c
       LEFT JOIN (
         SELECT clientId, COUNT(*) as projectsCount 
         FROM Projects 
         GROUP BY clientId
-      ) p ON c.id = p.clientId;
+      ) p ON c.id = p.clientId
+      LEFT JOIN (
+        SELECT clientId, COUNT(*) as sitesCount
+        FROM Sites
+        GROUP BY clientId
+      ) s ON c.id = s.clientId;
     `;
     const result = await db.all(query);
     return result;
@@ -55,6 +64,9 @@ export async function findClientById(id: string): Promise<Client | undefined> {
 
     const projectsCountResult = await db.get('SELECT COUNT(*) as projectsCount FROM Projects WHERE clientId = ?', id);
     client.projectsCount = projectsCountResult.projectsCount || 0;
+    
+    const sitesCountResult = await db.get('SELECT COUNT(*) as sitesCount FROM Sites WHERE clientId = ?', id);
+    client.sitesCount = sitesCountResult.sitesCount || 0;
     
     return client;
 }
@@ -134,9 +146,21 @@ export async function findManySites(): Promise<Site[]> {
     SELECT 
       s.*,
       c.name as clientName,
-      c.email as clientEmail
+      c.email as clientEmail,
+      IFNULL(p.projectsCount, 0) as projectsCount,
+      IFNULL(q.quotationsCount, 0) as quotationsCount
     FROM Sites s
-    JOIN Clients c ON s.clientId = c.id;
+    JOIN Clients c ON s.clientId = c.id
+    LEFT JOIN (
+        SELECT siteId, COUNT(*) as projectsCount
+        FROM Projects
+        GROUP BY siteId
+    ) p ON s.id = p.siteId
+    LEFT JOIN (
+        SELECT siteId, COUNT(*) as quotationsCount
+        FROM Quotations
+        GROUP BY siteId
+    ) q ON s.id = q.siteId;
   `;
   const results = await db.all(query);
   return results.map(row => ({
@@ -144,6 +168,8 @@ export async function findManySites(): Promise<Site[]> {
     name: row.name,
     address: row.address,
     clientId: row.clientId,
+    projectsCount: row.projectsCount,
+    quotationsCount: row.quotationsCount,
     client: {
         id: row.clientId,
         name: row.clientName,
@@ -160,9 +186,24 @@ export async function findManySites(): Promise<Site[]> {
 export async function findSiteById(id: string): Promise<Site | undefined> {
     const db = await getDb();
     const query = `
-        SELECT s.*, c.name as clientName, c.email as clientEmail
+        SELECT 
+            s.*, 
+            c.name as clientName, 
+            c.email as clientEmail,
+            IFNULL(p.projectsCount, 0) as projectsCount,
+            IFNULL(q.quotationsCount, 0) as quotationsCount
         FROM Sites s
         JOIN Clients c ON s.clientId = c.id
+        LEFT JOIN (
+            SELECT siteId, COUNT(*) as projectsCount
+            FROM Projects
+            GROUP BY siteId
+        ) p ON s.id = p.siteId
+        LEFT JOIN (
+            SELECT siteId, COUNT(*) as quotationsCount
+            FROM Quotations
+            GROUP BY siteId
+        ) q ON s.id = q.siteId
         WHERE s.id = ?
     `;
     const row = await db.get(query, id);
@@ -173,6 +214,8 @@ export async function findSiteById(id: string): Promise<Site | undefined> {
         name: row.name,
         address: row.address,
         clientId: row.clientId,
+        projectsCount: row.projectsCount,
+        quotationsCount: row.quotationsCount,
         client: {
             id: row.clientId,
             name: row.clientName,
@@ -214,4 +257,57 @@ export async function updateSite(id: string, siteData: SiteUpdateDto): Promise<S
 export async function deleteSite(id: string): Promise<void> {
     const db = await getDb();
     await db.run('DELETE FROM Sites WHERE id = ?', id);
+}
+
+// --- DB Initialization ---
+
+export async function initializeDbSchema() {
+    const db = await getDb();
+    await db.exec(`
+      CREATE TABLE IF NOT EXISTS Clients (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        email TEXT NOT NULL UNIQUE,
+        phone TEXT,
+        company TEXT,
+        avatarUrl TEXT,
+        status TEXT CHECK (status IN ('Active', 'Inactive'))
+      );
+  
+      CREATE TABLE IF NOT EXISTS Sites (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        clientId TEXT NOT NULL,
+        FOREIGN KEY (clientId) REFERENCES Clients(id) ON DELETE CASCADE
+      );
+  
+      CREATE TABLE IF NOT EXISTS Projects (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          description TEXT,
+          startDate TEXT,
+          deadline TEXT,
+          cost REAL,
+          status TEXT,
+          siteId TEXT,
+          clientId TEXT,
+          imageUrl TEXT,
+          tasks TEXT DEFAULT '[]',
+          updates TEXT DEFAULT '[]',
+          contractorIds TEXT DEFAULT '[]',
+          approvedQuotationIds TEXT DEFAULT '[]',
+          FOREIGN KEY (siteId) REFERENCES Sites(id),
+          FOREIGN KEY (clientId) REFERENCES Clients(id)
+      );
+
+      CREATE TABLE IF NOT EXISTS Quotations (
+          id TEXT PRIMARY KEY,
+          title TEXT NOT NULL,
+          status TEXT CHECK (status IN ('Draft', 'Sent', 'Approved', 'Rejected')),
+          siteId TEXT NOT NULL,
+          items TEXT DEFAULT '[]',
+          FOREIGN KEY (siteId) REFERENCES Sites(id) ON DELETE CASCADE
+      );
+    `);
 }

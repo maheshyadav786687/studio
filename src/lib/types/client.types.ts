@@ -13,11 +13,12 @@ export const ClientSchema = z.object({
   company: z.string().min(2, 'Company name is required.'),
   avatarUrl: z.string().url(),
   projectsCount: z.number().int(),
+  sitesCount: z.number().int().optional(),
   status: z.enum(['Active', 'Inactive']),
   sites: z.array(z.lazy(() => SiteSchema)).optional(),
 });
 
 export type Client = z.infer<typeof ClientSchema>;
 
-export const ClientFormSchema = ClientSchema.omit({ id: true, avatarUrl: true, projectsCount: true, sites: true });
+export const ClientFormSchema = ClientSchema.omit({ id: true, avatarUrl: true, projectsCount: true, sites: true, sitesCount: true });
 export type ClientFormData = z.infer<typeof ClientFormSchema>;
