@@ -21,7 +21,7 @@ export type QuotationUpdateDto = Partial<QuotationCreateDto>;
 
 export async function getQuotations(): Promise<Quotation[]> {
   const quotations = await findManyQuotations();
-  return quotations;
+  return quotations.map(q => ({ ...q, items: q.items.map(item => ({...item, material: Boolean(item.material)})) }));
 }
 
 export async function getSitesGroupedByClient() {
@@ -29,7 +29,11 @@ export async function getSitesGroupedByClient() {
 }
 
 export async function getQuotationById(id: string): Promise<Quotation | undefined> {
-    return await findQuotationById(id);
+    const quotation =  await findQuotationById(id);
+    if (quotation) {
+      return { ...quotation, items: quotation.items.map(item => ({...item, material: Boolean(item.material)})) };
+    }
+    return undefined;
 }
 
 export async function createQuotation(quotationDto: QuotationCreateDto): Promise<Quotation> {

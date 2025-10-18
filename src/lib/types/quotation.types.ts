@@ -2,12 +2,29 @@
 import { z } from 'zod';
 import { format } from 'date-fns';
 
+export const units = [
+    'Square Feet',
+    'Square Meters',
+    'Running Feet',
+    'Running Meters',
+    'Cubic Feet',
+    'Cubic Meters',
+    'Lump Sum',
+    'Numbers',
+    'Kilogram',
+    'Litre',
+] as const;
+const UnitEnum = z.enum(units);
+
 export const QuotationItemSchema = z.object({
   id: z.string(),
   description: z.string().min(1, 'Description is required.'),
   quantity: z.number().min(0, 'Quantity must be positive.'),
+  unit: UnitEnum,
   rate: z.number().min(0, 'Rate must be positive.'),
   amount: z.number(),
+  area: z.number().min(0, 'Area must be positive.').optional(),
+  material: z.boolean(),
 });
 export type QuotationItem = z.infer<typeof QuotationItemSchema>;
 

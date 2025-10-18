@@ -5,7 +5,7 @@
 // This layer is responsible for all communication with the database.
 
 import { getDb } from './db-provider';
-import type { Project, Client, Site, SiteFormData, Quotation } from './types';
+import type { Project, Client, Site, SiteFormData, Quotation, QuotationItem } from './types';
 import type { ClientCreateDto, ClientUpdateDto } from './bll/client-bll';
 import type { SiteCreateDto, SiteUpdateDto } from './bll/site-bll';
 import type { QuotationCreateDto, QuotationUpdateDto } from './bll/quotation-bll';
@@ -308,11 +308,14 @@ export async function findManyQuotations(): Promise<Quotation[]> {
         JOIN Clients c ON s.clientId = c.id
         ORDER BY q.quotationDate DESC;
     `;
-    const results = await db.all(query);
-    return results.map(row => ({
-        ...row,
-        items: JSON.parse(row.items || '[]')
-    }));
+    const quotations = await db.all(query);
+
+    for (const quotation of quotations) {
+        const items = await db.all('SELECT * FROM QuotationItems WHERE quotationId = ?', quotation.id);
+        quotation.items = items.map(item => ({ ...item, material: !!item.material }));
+    }
+
+    return quotations;
 }
 
 export async function findQuotationById(id: string): Promise<Quotation | undefined> {
@@ -329,10 +332,11 @@ export async function findQuotationById(id: string): Promise<Quotation | undefin
     `;
     const row = await db.get(query, id);
     if (!row) return undefined;
-    return {
-        ...row,
-        items: JSON.parse(row.items || '[]')
-    };
+
+    const items = await db.all('SELECT * FROM QuotationItems WHERE quotationId = ?', id);
+    row.items = items.map(item => ({ ...item, material: !!item.material }));
+
+    return row;
 }
 
 async function getNextQuotationNumber(): Promise<string> {
@@ -357,31 +361,67 @@ async function getNextQuotationNumber(): Promise<string> {
 export async function createQuotation(quotationData: QuotationCreateDto): Promise<Quotation> {
     const db = await getDb();
     const id = `quote-${Date.now()}`;
-    const itemsJson = JSON.stringify(quotationData.items || []);
     const quotationNumber = await getNextQuotationNumber();
-    const query = `
-        INSERT INTO Quotations (id, quotationNumber, quotationDate, title, status, siteId, items)
-        VALUES (?, ?, ?, ?, ?, ?, ?);
-    `;
-    await db.run(query, id, quotationNumber, quotationData.quotationDate, quotationData.title, quotationData.status, quotationData.siteId, itemsJson);
-    const newQuotation = await findQuotationById(id);
-    return newQuotation!;
+    
+    await db.run('BEGIN TRANSACTION');
+    try {
+        const query = `
+            INSERT INTO Quotations (id, quotationNumber, quotationDate, title, status, siteId)
+            VALUES (?, ?, ?, ?, ?, ?);
+        `;
+        await db.run(query, id, quotationNumber, quotationData.quotationDate, quotationData.title, quotationData.status, quotationData.siteId);
+
+        if (quotationData.items) {
+            for (const item of quotationData.items) {
+                const itemQuery = `
+                    INSERT INTO QuotationItems (id, quotationId, description, quantity, unit, rate, amount, area, material)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                `;
+                const amount = (item.area && item.area > 0) ? (item.quantity || 0) * (item.rate || 0) * item.area : (item.quantity || 0) * (item.rate || 0);
+                await db.run(itemQuery, `item-${Date.now()}-${Math.random()}`, id, item.description, item.quantity, item.unit, item.rate, amount, item.area, item.material ? 1 : 0);
+            }
+        }
+
+        await db.run('COMMIT');
+        const newQuotation = await findQuotationById(id);
+        return newQuotation!;
+    } catch (e) {
+        await db.run('ROLLBACK');
+        throw e;
+    }
 }
 
 export async function updateQuotation(id: string, quotationData: QuotationUpdateDto): Promise<Quotation | undefined> {
     const db = await getDb();
-    const itemsJson = quotationData.items ? JSON.stringify(quotationData.items) : undefined;
-    const query = `
-        UPDATE Quotations
-        SET title = COALESCE(?, title),
-            quotationDate = COALESCE(?, quotationDate),
-            status = COALESCE(?, status),
-            siteId = COALESCE(?, siteId),
-            items = COALESCE(?, items)
-        WHERE id = ?;
-    `;
-    await db.run(query, quotationData.title, quotationData.quotationDate, quotationData.status, quotationData.siteId, itemsJson, id);
-    return await findQuotationById(id);
+    await db.run('BEGIN TRANSACTION');
+    try {
+        const query = `
+            UPDATE Quotations
+            SET title = COALESCE(?, title),
+                quotationDate = COALESCE(?, quotationDate),
+                status = COALESCE(?, status),
+                siteId = COALESCE(?, siteId)
+            WHERE id = ?;
+        `;
+        await db.run(query, quotationData.title, quotationData.quotationDate, quotationData.status, quotationData.siteId, id);
+
+        if (quotationData.items) {
+            await db.run('DELETE FROM QuotationItems WHERE quotationId = ?', id);
+            for (const item of quotationData.items) {
+                const itemQuery = `
+                    INSERT INTO QuotationItems (id, quotationId, description, quantity, unit, rate, amount, area, material)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+                `;
+                const amount = (item.area && item.area > 0) ? (item.quantity || 0) * (item.rate || 0) * item.area : (item.quantity || 0) * (item.rate || 0);
+                await db.run(itemQuery, `item-${Date.now()}-${Math.random()}`, id, item.description, item.quantity, item.unit, item.rate, amount, item.area, item.material ? 1 : 0);
+            }
+        }
+        await db.run('COMMIT');
+        return await findQuotationById(id);
+    } catch (e) {
+        await db.run('ROLLBACK');
+        throw e;
+    }
 }
 
 export async function deleteQuotation(id: string): Promise<void> {
@@ -439,8 +479,20 @@ export async function initializeDbSchema() {
           title TEXT NOT NULL,
           status TEXT CHECK (status IN ('Draft', 'Sent', 'Approved', 'Rejected')),
           siteId TEXT NOT NULL,
-          items TEXT DEFAULT '[]',
           FOREIGN KEY (siteId) REFERENCES Sites(id) ON DELETE CASCADE
+      );
+
+      CREATE TABLE IF NOT EXISTS QuotationItems (
+        id TEXT PRIMARY KEY,
+        quotationId TEXT NOT NULL,
+        description TEXT NOT NULL,
+        quantity REAL NOT NULL,
+        unit TEXT NOT NULL,
+        rate REAL NOT NULL,
+        amount REAL NOT NULL,
+        area REAL,
+        material INTEGER NOT NULL,
+        FOREIGN KEY (quotationId) REFERENCES Quotations(id) ON DELETE CASCADE
       );
     `);
 }

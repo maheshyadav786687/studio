@@ -10,7 +10,7 @@ CREATE TABLE Clients (
   avatarUrl NVARCHAR(MAX),
   status NVARCHAR(20) CHECK (status IN ('Active', 'Inactive'))
 );
-GO
+
 
 -- Create the Projects table
 -- NOTE: For simplicity, 'tasks' and 'updates' are stored as JSON strings.
@@ -29,7 +29,7 @@ CREATE TABLE Projects (
     updates NVARCHAR(MAX) DEFAULT '[]',
     contractorIds NVARCHAR(MAX) DEFAULT '[]'
 );
-GO
+
 
 -- Create the Sites table
 CREATE TABLE Sites (
@@ -38,4 +38,28 @@ CREATE TABLE Sites (
   address NVARCHAR(MAX) NOT NULL,
   clientId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Clients(id)
 );
-GO
+
+
+-- Create the Quotations table
+CREATE TABLE Quotations (
+  id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  quotationNumber NVARCHAR(255) NOT NULL,
+  quotationDate DATE NOT NULL,
+  title NVARCHAR(255) NOT NULL,
+  status NVARCHAR(50) CHECK (status IN ('Draft', 'Sent', 'Approved', 'Rejected')),
+  siteId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Sites(id)
+);
+
+
+-- Create the QuotationItems table
+CREATE TABLE QuotationItems (
+  id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+  quotationId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Quotations(id),
+  description NVARCHAR(MAX) NOT NULL,
+  quantity FLOAT NOT NULL,
+  unit NVARCHAR(50) NOT NULL,
+  rate FLOAT NOT NULL,
+  amount FLOAT NOT NULL,
+  area FLOAT,
+  material BIT NOT NULL
+);
