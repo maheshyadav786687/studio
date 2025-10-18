@@ -2,6 +2,7 @@
 "use client"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import * as React from "react";
 import {
   LayoutDashboard,
   Users,
@@ -131,7 +132,7 @@ type NavItem = {
 
 const NavLink = ({ item, pathname }: { item: NavItem, pathname: string }) => {
   const { href, icon: Icon, label } = item;
-  const isLinkActive = href && pathname.startsWith(href);
+  const isLinkActive = href && href !=='#' && pathname.startsWith(href);
 
   return (
     <Link
@@ -150,15 +151,17 @@ const NavLink = ({ item, pathname }: { item: NavItem, pathname: string }) => {
 }
 
 export function AppSidebarNav() {
-  const pathname = usePathname()
-  
-  const activeParent = navItems.find(
-    item =>
-      item.href !== '/admin/dashboard' &&
-      item.subItems &&
-      (item.href === pathname ||
-        item.subItems?.some(sub => sub.href && pathname.startsWith(sub.href)))
-  )
+  const pathname = usePathname();
+  const [value, setValue] = React.useState("");
+
+  React.useEffect(() => {
+    const activeParent = navItems.find(
+      item =>
+        item.subItems?.some(sub => sub.href && sub.href !== '#' && pathname.startsWith(sub.href))
+    );
+    setValue(activeParent?.label || "");
+  }, [pathname]);
+
 
   return (
     <div className="flex h-full max-h-screen flex-col gap-2 bg-sidebar text-sidebar-foreground">
@@ -176,16 +179,16 @@ export function AppSidebarNav() {
           type="single"
           collapsible
           className="w-full px-2 lg:px-4 space-y-1 py-2"
-          defaultValue={activeParent?.label}
+          value={value}
+          onValueChange={setValue}
         >
-          {navItems.map(item => {
-            if (item.subItems) {
-              return (
+          {navItems.map(item => (
+             item.subItems ? (
                 <AccordionItem key={item.label} value={item.label} className="border-b-0">
                   <AccordionTrigger
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline",
-                      item.subItems?.some(sub => sub.href && pathname.startsWith(sub.href)) ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""
+                      item.subItems?.some(sub => sub.href && sub.href !== '#' && pathname.startsWith(sub.href)) ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""
                     )}
                   >
                     <div className="flex items-center gap-3">
@@ -201,10 +204,10 @@ export function AppSidebarNav() {
                     </nav>
                   </AccordionContent>
                 </AccordionItem>
+              ) : (
+                <NavLink key={item.label} item={item} pathname={pathname} />
               )
-            }
-            return <NavLink key={item.label} item={item} pathname={pathname} />
-          })}
+          ))}
         </Accordion>
       </div>
     </div>
