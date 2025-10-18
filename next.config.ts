@@ -30,6 +30,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Expose environment variables to the server-side code
+  serverRuntimeConfig: {
+    DATABASE_URL: process.env.DATABASE_URL,
+  },
 };
 
 export default nextConfig;

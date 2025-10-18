@@ -1,162 +1,148 @@
 'use server';
 
-// DAL (Data Access Layer)
+// DAL (Data Access Layer) - MS SQL IMPLEMENTATION
 // This layer is responsible for all communication with the database.
-// It should only be called by the BLL.
-
-// Load environment variables directly here to ensure they are available.
-import 'dotenv/config';
 
 import sql from 'mssql';
 import type { Project, Client } from './types';
 import type { ClientCreateDto, ClientUpdateDto } from './bll/client-bll';
+import getConfig from 'next/config';
+
+// The serverRuntimeConfig is set in next.config.ts
+const { serverRuntimeConfig } = getConfig();
 
 const config = {
-  connectionString: process.env.DATABASE_URL,
+  connectionString: serverRuntimeConfig.DATABASE_URL,
 };
 
-// In a real production app, you might want to manage a connection pool
-// more carefully, but for this purpose, creating a new pool on demand is fine.
-const getDb = async () => {
-    if (!config.connectionString) {
-      // Throw an error if the connection string is not set.
-      throw new Error("DATABASE_URL environment variable is not set. The application cannot connect to the database.");
-    }
-    try {
-        const pool = await sql.connect(config.connectionString);
-        return pool;
-    } catch (err) {
-        console.error("Database connection failed:", err);
-        // Re-throw the error to be caught by the calling layer.
-        throw new Error(`Database connection failed. Please check your connection string and network access. Original error: ${err instanceof Error ? err.message : String(err)}`);
-    }
+let pool: sql.ConnectionPool | null = null;
+
+async function getDb(): Promise<sql.ConnectionPool> {
+  if (pool && pool.connected) {
+    return pool;
+  }
+  if (!config.connectionString) {
+    // Throw an error if the connection string is not set in next.config.js
+    throw new Error("DATABASE_URL is not configured in next.config.ts serverRuntimeConfig. The application cannot connect to the database.");
+  }
+  try {
+    pool = await sql.connect(config.connectionString);
+    return pool;
+  } catch (err) {
+    console.error('Database connection failed:', err);
+    // Important: re-throw the error to ensure the calling function knows about the failure.
+    throw new Error('Failed to connect to the database.');
+  }
 }
-
-
-/**
- * NOTE: The queries below assume you have created the necessary tables from schema.sql
- * The project-related queries assume that `tasks` and `updates` are stored as JSON strings.
- * This is a simplification. In a real-world scenario, you would have separate tables for Tasks and Updates.
- */
 
 // --- Project Functions ---
 
 export async function findManyProjects(): Promise<Project[]> {
-    const pool = await getDb();
-    const result = await pool.request().query`SELECT * FROM Projects`;
-    return result.recordset.map(p => ({
-        ...p,
-        tasks: JSON.parse(p.tasks || '[]'),
-        updates: JSON.parse(p.updates || '[]'),
-    })) as Project[];
+    const db = await getDb();
+    const result = await db.request().query('SELECT * FROM Projects');
+    // In a real app, you would parse tasks and updates which might be stored as JSON
+    return result.recordset.map(p => ({ ...p, tasks: [], updates: [] }));
 }
 
 export async function findProjectById(id: string): Promise<Project | undefined> {
-    const pool = await getDb();
-    const result = await pool.request()
-    .input('id', sql.NVarChar, id)
-    .query`SELECT * FROM Projects WHERE id = @id`;
-    
-    if (result.recordset.length === 0) {
-    return undefined;
+    const db = await getDb();
+    const result = await db.request()
+        .input('id', sql.VarChar, id)
+        .query('SELECT * FROM Projects WHERE id = @id');
+    const project = result.recordset[0];
+    if (project) {
+       // In a real app, you would parse tasks and updates which might be stored as JSON
+      return { ...project, tasks: [], updates: [] };
     }
-    const p = result.recordset[0];
-    return {
-        ...p,
-        tasks: JSON.parse(p.tasks || '[]'),
-        updates: JSON.parse(p.updates || '[]'),
-    } as Project;
+    return undefined;
 }
 
 
 // --- Client Functions ---
 
 export async function findManyClients(): Promise<Client[]> {
-    const pool = await getDb();
-    // A more complex query to calculate projectsCount on the fly
-    const result = await pool.request().query`
-    SELECT 
+    const db = await getDb();
+    // This query joins Clients with a subquery that counts projects for each client.
+    const query = `
+      SELECT 
         c.*, 
-        (SELECT COUNT(*) FROM Projects p WHERE c.id = p.clientId) as projectsCount 
-    FROM Clients c
+        ISNULL(p.projectsCount, 0) as projectsCount 
+      FROM Clients c
+      LEFT JOIN (
+        SELECT clientId, COUNT(*) as projectsCount 
+        FROM Projects 
+        GROUP BY clientId
+      ) p ON c.id = p.clientId;
     `;
-    return result.recordset as Client[];
+    const result = await db.request().query(query);
+    return result.recordset;
 }
 
 export async function findClientByEmail(email: string): Promise<Client | undefined> {
-    const pool = await getDb();
-    const result = await pool.request()
-    .input('email', sql.NVarChar, email)
-    .query`SELECT * FROM Clients WHERE email = @email`;
-    return result.recordset[0] as Client | undefined;
+    const db = await getDb();
+    const result = await db.request()
+        .input('email', sql.VarChar, email)
+        .query('SELECT * FROM Clients WHERE email = @email');
+    return result.recordset[0];
 }
 
 export async function createClient(clientData: ClientCreateDto): Promise<Client> {
-    const pool = await getDb();
-    const newId = `cl${Date.now()}`;
-    const avatarUrl = `https://picsum.photos/seed/${Date.now()}/100/100`;
+   const db = await getDb();
+   const newId = `cl${Date.now()}`;
+   // The avatar URL is now generated here, but it could come from an external service.
+   const avatarUrl = `https://picsum.photos/seed/${newId}/100/100`;
 
-    try {
-        await pool.request()
-            .input('id', sql.NVarChar, newId)
-            .input('name', sql.NVarChar, clientData.name)
-            .input('email', sql.NVarChar, clientData.email)
-            .input('phone', sql.NVarChar, clientData.phone)
-            .input('company', sql.NVarChar, clientData.company)
-            .input('avatarUrl', sql.NVarChar, avatarUrl)
-            .input('status', sql.NVarChar, clientData.status)
-            .query`INSERT INTO Clients (id, name, email, phone, company, avatarUrl, status, projectsCount) VALUES (@id, @name, @email, @phone, @company, @avatarUrl, @status, 0)`;
+   const query = `
+    INSERT INTO Clients (id, name, email, phone, company, status, avatarUrl)
+    OUTPUT INSERTED.*
+    VALUES (@id, @name, @email, @phone, @company, @status, @avatarUrl);
+   `;
 
-        const newClient: Client = {
-          ...clientData,
-          id: newId,
-          avatarUrl: avatarUrl,
-          projectsCount: 0,
-        };
+   try {
+     const result = await db.request()
+       .input('id', sql.VarChar, newId)
+       .input('name', sql.NVarChar, clientData.name)
+       .input('email', sql.NVarChar, clientData.email)
+       .input('phone', sql.VarChar, clientData.phone)
+       .input('company', sql.NVarChar, clientData.company)
+       .input('status', sql.VarChar, clientData.status)
+       .input('avatarUrl', sql.VarChar, avatarUrl)
+       .query(query);
 
-        return newClient;
-    } catch (err) {
-        console.error("Failed to insert client into database:", err);
-        // Ensure a meaningful error is thrown to the BLL/API layers
-        throw new Error(`Database query failed. Could not create client. Make sure the 'Clients' table exists and check columns. Original error: ${err instanceof Error ? err.message : String(err)}`);
-    }
+    const newClient = result.recordset[0];
+    // The query returns the new row, but we need to ensure projectsCount is there.
+    // Since it's a new client, the count is 0.
+    return { ...newClient, projectsCount: 0 };
+
+   } catch (error) {
+     console.error("Failed to create client in database:", error);
+     // Re-throw a more user-friendly error to be caught by the BLL/API layer
+     throw new Error("Database operation failed: Could not create client.");
+   }
 }
 
+
 export async function updateClient(id: string, clientData: ClientUpdateDto): Promise<Client | undefined> {
-    const pool = await getDb();
-    
-    const setClauses = Object.keys(clientData)
-    .map(key => `${key} = @${key}`)
-    .join(', ');
-
-    if (!setClauses) return undefined;
-
-    const request = pool.request().input('id', sql.NVarChar, id);
-    for (const [key, value] of Object.entries(clientData)) {
-        // Ensure that the type is correctly inferred for mssql
-        let fieldType;
-        switch(typeof value) {
-            case 'number':
-                fieldType = sql.Int;
-                break;
-            default:
-                fieldType = sql.NVarChar;
-        }
-        request.input(key, fieldType, value);
-    }
-
-    await request.query(`UPDATE Clients SET ${setClauses} WHERE id = @id`);
-
-    const result = await pool.request()
-        .input('id', sql.NVarChar, id)
-        .query`SELECT *, (SELECT COUNT(*) FROM Projects p WHERE p.clientId = c.id) as projectsCount FROM Clients c WHERE c.id = @id`;
-
-    return result.recordset[0] as Client | undefined;
+    const db = await getDb();
+    const result = await db.request()
+        .input('id', sql.VarChar, id)
+        .input('name', sql.NVarChar, clientData.name)
+        .input('email', sql.NVarChar, clientData.email)
+        .input('phone', sql.VarChar, clientData.phone)
+        .input('company', sql.NVarChar, clientData.company)
+        .input('status', sql.VarChar, clientData.status)
+        .query(`
+            UPDATE Clients
+            SET name = @name, email = @email, phone = @phone, company = @company, status = @status
+            OUTPUT INSERTED.*
+            WHERE id = @id
+        `);
+    return result.recordset[0];
 }
 
 export async function deleteClient(id: string): Promise<void> {
-    const pool = await getDb();
-    await pool.request()
-    .input('id', sql.NVarChar, id)
-    .query`DELETE FROM Clients WHERE id = @id`;
+    const db = await getDb();
+    await db.request()
+        .input('id', sql.VarChar, id)
+        .query('DELETE FROM Clients WHERE id = @id');
 }
