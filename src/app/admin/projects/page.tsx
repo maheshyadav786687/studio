@@ -1,14 +1,13 @@
-'use client';
 import { PlusCircle } from "lucide-react"
-import { useProjects } from "@/hooks/use-projects";
 
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/projects/project-card"
-import { Skeleton } from "@/components/ui/skeleton";
+import { db } from "@/lib/database"
+import type { Project } from "@/lib/types";
 
-
-export default function ProjectsPage() {
-  const { projects, isLoading, error } = useProjects();
+export default async function ProjectsPage() {
+  // BLL/Application layer fetching data via the DAL
+  const projects: Project[] = await db.projects.findMany();
 
   return (
     <div className="flex flex-col gap-8">
@@ -26,27 +25,14 @@ export default function ProjectsPage() {
           </Button>
         </div>
       </div>
-       {isLoading && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-             <div key={i} className="flex flex-col space-y-3">
-                <Skeleton className="h-[200px] w-full rounded-lg" />
-                <div className="space-y-2">
-                  <Skeleton className="h-4 w-3/4" />
-                  <Skeleton className="h-4 w-1/2" />
-                </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {error && <p className="text-destructive">Failed to load projects.</p>}
-      {!isLoading && !error && (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {projects.map(project => (
-            <ProjectCard key={project.id} project={project} />
-          ))}
-        </div>
-      )}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {projects.map(project => (
+          <ProjectCard key={project.id} project={project} />
+        ))}
+        {projects.length === 0 && (
+            <p className="text-muted-foreground col-span-full">No projects found.</p>
+        )}
+      </div>
     </div>
   )
 }
