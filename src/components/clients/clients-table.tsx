@@ -33,11 +33,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Pencil, Trash2, ArrowUpDown } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2, ArrowUpDown, PlusCircle } from 'lucide-react';
 
 import type { Client } from '@/lib/types';
 import { ClientDialog } from './client-dialog';
 import { DeleteClientDialog } from './delete-client-dialog';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+  } from "@/components/ui/select"
 
 export const columns: ColumnDef<Client>[] = [
   {
@@ -190,6 +197,16 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
           }
           className="max-w-sm"
         />
+        <div className="ml-auto flex items-center gap-2">
+            <ClientDialog>
+                <Button size="sm" className="h-8 gap-1">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Add Client
+                    </span>
+                </Button>
+            </ClientDialog>
+        </div>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -240,50 +257,76 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
-        <div className="flex items-center gap-4">
-            <span className="flex items-center gap-1 text-sm">
-                <div>Page</div>
-                <strong>
-                {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-                </strong>
-            </span>
-            <div className="flex items-center gap-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.setPageIndex(0)}
-                    disabled={!table.getCanPreviousPage()}
-                    >
-                    <span className="sr-only">Go to first page</span>
-                    {'<<'}
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.previousPage()}
-                    disabled={!table.getCanPreviousPage()}
-                    >
-                    <span className="sr-only">Go to previous page</span>
-                    {'<'}
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.nextPage()}
-                    disabled={!table.getCanNextPage()}
-                    >
-                    <span className="sr-only">Go to next page</span>
-                    {'>'}
-                </Button>
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-                    disabled={!table.getCanNextPage()}
-                    >
-                    <span className="sr-only">Go to last page</span>
-                    {'>>'}
-                </Button>
+        <div className="flex items-center gap-6">
+            <div className="flex items-center space-x-2">
+                <p className="text-sm font-medium">Rows per page</p>
+                <Select
+                    value={`${table.getState().pagination.pageSize}`}
+                    onValueChange={(value) => {
+                    table.setPageSize(Number(value))
+                    }}
+                >
+                    <SelectTrigger className="h-8 w-[70px]">
+                    <SelectValue placeholder={table.getState().pagination.pageSize} />
+                    </SelectTrigger>
+                    <SelectContent side="top">
+                    {[10, 20, 30, 40, 50].map((pageSize) => (
+                        <SelectItem key={pageSize} value={`${pageSize}`}>
+                        {pageSize}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1 text-sm">
+                    <div>Page</div>
+                    <strong>
+                    {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                    </strong>
+                </span>
+                <div className="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => table.setPageIndex(0)}
+                        disabled={!table.getCanPreviousPage()}
+                        >
+                        <span className="sr-only">Go to first page</span>
+                        {'<<'}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => table.previousPage()}
+                        disabled={!table.getCanPreviousPage()}
+                        >
+                        <span className="sr-only">Go to previous page</span>
+                        {'<'}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => table.nextPage()}
+                        disabled={!table.getCanNextPage()}
+                        >
+                        <span className="sr-only">Go to next page</span>
+                        {'>'}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                        disabled={!table.getCanNextPage()}
+                        >
+                        <span className="sr-only">Go to last page</span>
+                        {'>>'}
+                    </Button>
+                </div>
             </div>
         </div>
       </div>
