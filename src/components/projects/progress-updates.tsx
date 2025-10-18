@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
 import { format } from 'date-fns';
 
@@ -11,7 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Sparkles } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-import type { Project, ProjectUpdate as ProjectUpdateType } from "@/lib/types";
+import type { Project, ProjectUpdate } from "@/lib/types";
 import { generateSummaryAction } from '@/app/admin/projects/[id]/actions';
 
 type ProgressUpdatesProps = {
@@ -28,66 +28,56 @@ function SubmitButton() {
     );
 }
 
-
 export function ProgressUpdates({ project }: ProgressUpdatesProps) {
-    const [updates, setUpdates] = useState<ProjectUpdateType[]>(project.updates);
-    const initialState = { message: null, summary: null, errors: {} };
+    const [updates, setUpdates] = useState<ProjectUpdate[]>(project.updates);
+    const formRef = useRef<HTMLFormElement>(null);
+
+    const initialState = { message: null, summary: null, errors: {}, originalContent: null };
     const [state, formAction] = useFormState(generateSummaryAction, initialState);
-    
-    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        const formData = new FormData(event.currentTarget);
-        
-        // Optimistically add new update
-        const newUpdateText = formData.get('updateText') as string;
-        if(newUpdateText && newUpdateText.length > 10) {
-            const newUpdate: ProjectUpdateType = {
-                id: `temp-${Date.now()}`,
+
+    useEffect(() => {
+        if (state.message === 'Summary generated successfully.' && state.summary && state.originalContent) {
+            const newUpdate: ProjectUpdate = {
+                id: `update-${Date.now()}`,
                 date: new Date().toISOString(),
-                content: newUpdateText,
+                content: state.originalContent,
+                summary: state.summary,
                 author: "Anjali Sharma", // Hardcoded for demo
                 authorAvatar: "https://picsum.photos/seed/avatar1/100/100",
             };
             setUpdates(prev => [newUpdate, ...prev]);
+            formRef.current?.reset();
         }
-        
-        // @ts-ignore
-        formAction(formData);
-        
-        // In a real app, the revalidation would handle UI update
-        // here we manually add the summary to the new update
-        if(state.summary) {
-            setUpdates(prev => {
-                const newUpdates = [...prev];
-                const optimisticUpdate = newUpdates.find(u => u.id.startsWith('temp-'));
-                if(optimisticUpdate) {
-                    optimisticUpdate.summary = state.summary;
-                }
-                return newUpdates;
-            });
-        }
-    };
+    }, [state]);
+
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle className="text-lg font-headline">Progress Tracking</CardTitle>
-                <CardDescription>Monitor progress through contractor updates.</CardDescription>
+                <CardDescription>Monitor progress through contractor updates and AI summaries.</CardDescription>
             </CardHeader>
             <CardContent>
-                <form action={formAction} className="space-y-4">
+                <form ref={formRef} action={formAction} className="space-y-4">
                     <input type="hidden" name="projectId" value={project.id} />
                     <Textarea
                         name="updateText"
                         placeholder="Provide a detailed update on your progress, challenges, and next steps..."
                         className="min-h-[120px]"
                         required
+                        minLength={10}
                     />
                     <div className="flex justify-end">
                        <SubmitButton />
                     </div>
-                     {state?.message && !state.summary && (
+                     {state?.errors?.updateText && (
                         <Alert variant="destructive">
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>{state.errors.updateText[0]}</AlertDescription>
+                        </Alert>
+                    )}
+                    {state?.message && state.message !== 'Summary generated successfully.' && !state.errors?.updateText && (
+                         <Alert variant="destructive">
                             <AlertTitle>Error</AlertTitle>
                             <AlertDescription>{state.message}</AlertDescription>
                         </Alert>
@@ -95,18 +85,11 @@ export function ProgressUpdates({ project }: ProgressUpdatesProps) {
                 </form>
 
                 <div className="mt-6 space-y-6">
-                    {state.summary && (
-                         <Alert>
-                            <Sparkles className="h-4 w-4" />
-                            <AlertTitle>AI Summary Generated</AlertTitle>
-                            <AlertDescription>{state.summary}</AlertDescription>
-                        </Alert>
-                    )}
                     <h3 className="text-md font-semibold text-muted-foreground">Update History</h3>
                     {updates.map(update => (
                         <div key={update.id} className="flex items-start gap-4 border-b pb-4 last:border-b-0">
                             <Avatar className="h-9 w-9 border">
-                                <AvatarImage src={update.authorAvatar} alt={update.author} />
+                                <AvatarImage src={update.authorAvatar} alt={update.author} data-ai-hint="person portrait" />
                                 <AvatarFallback>{update.author.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="grid gap-2 flex-1">

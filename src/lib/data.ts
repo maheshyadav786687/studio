@@ -1,51 +1,9 @@
-import type { Contractor, Project } from './types';
+import type { Project } from './types';
 import { PlaceHolderImages } from './placeholder-images';
 
 const getImageUrl = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
 
-export const contractors: Contractor[] = [
-  {
-    id: 'c1',
-    name: 'Anjali Sharma',
-    email: 'anjali.sharma@example.com',
-    phone: '+91 98765 43210',
-    skills: ['React', 'Node.js', 'UI/UX Design'],
-    availability: 'Available',
-    avatarUrl: getImageUrl('avatar1'),
-    performance: 92,
-  },
-  {
-    id: 'c2',
-    name: 'Rohan Verma',
-    email: 'rohan.verma@example.com',
-    phone: '+91 99887 76655',
-    skills: ['Angular', 'Firebase', 'DevOps'],
-    availability: 'On Project',
-    avatarUrl: getImageUrl('avatar2'),
-    performance: 88,
-  },
-  {
-    id: 'c3',
-    name: 'Priya Patel',
-    email: 'priya.patel@example.com',
-    phone: '+91 88776 65544',
-    skills: ['Vue.js', 'Python', 'Django'],
-    availability: 'Available',
-    avatarUrl: getImageUrl('avatar3'),
-    performance: 95,
-  },
-  {
-    id: 'c4',
-    name: 'Sameer Khan',
-    email: 'sameer.khan@example.com',
-    phone: '+91 77665 54433',
-    skills: ['Next.js', 'GraphQL', 'Tailwind CSS'],
-    availability: 'Unavailable',
-    avatarUrl: getImageUrl('avatar4'),
-    performance: 85,
-  },
-];
-
+// This file now only contains initial data for seeding, it is not used by the running application.
 export const projects: Project[] = [
   {
     id: 'p1',
@@ -55,12 +13,12 @@ export const projects: Project[] = [
     deadline: '2024-08-31',
     cost: 500000,
     status: 'In Progress',
-    contractorIds: ['c2', 'c4'],
+    clientId: 'cl1',
     imageUrl: getImageUrl('project1'),
     tasks: [
-      { id: 't1-1', title: 'Initial Design Mockups', description: 'Create wireframes and high-fidelity mockups.', status: 'Done', assigneeId: 'c4' },
-      { id: 't1-2', title: 'Frontend Development', description: 'Implement the new design using React.', status: 'In Progress', assigneeId: 'c2' },
-      { id: 't1-3', title: 'Backend API Integration', description: 'Connect the frontend to the CMS.', status: 'To-do', assigneeId: 'c2' },
+      { id: 't1-1', title: 'Initial Design Mockups', description: 'Create wireframes and high-fidelity mockups.', status: 'Done' },
+      { id: 't1-2', title: 'Frontend Development', description: 'Implement the new design using React.', status: 'In Progress' },
+      { id: 't1-3', title: 'Backend API Integration', description: 'Connect the frontend to the CMS.', status: 'To-do' },
     ],
     updates: [
       {
@@ -81,12 +39,12 @@ export const projects: Project[] = [
     deadline: '2024-12-15',
     cost: 1200000,
     status: 'In Progress',
-    contractorIds: ['c1'],
+    clientId: 'cl2',
     imageUrl: getImageUrl('project2'),
     tasks: [
-      { id: 't2-1', title: 'Setup CI/CD Pipeline', description: 'Configure automated build and deployment.', status: 'Done', assigneeId: 'c1' },
-      { id: 't2-2', title: 'Implement User Authentication', description: 'Build login and registration screens.', status: 'In Progress', assigneeId: 'c1' },
-      { id: 't2-3', title: 'Develop Dashboard UI', description: 'Create the main dashboard interface.', status: 'To-do', assigneeId: 'c1' },
+      { id: 't2-1', title: 'Setup CI/CD Pipeline', description: 'Configure automated build and deployment.', status: 'Done' },
+      { id: 't2-2', title: 'Implement User Authentication', description: 'Build login and registration screens.', status: 'In Progress' },
+      { id: 't2-3', title: 'Develop Dashboard UI', description: 'Create the main dashboard interface.', status: 'To-do' },
     ],
     updates: [],
   },
@@ -98,7 +56,7 @@ export const projects: Project[] = [
     deadline: '2025-01-31',
     cost: 2500000,
     status: 'Not Started',
-    contractorIds: ['c3'],
+    clientId: 'cl1',
     imageUrl: getImageUrl('project3'),
     tasks: [
       { id: 't3-1', title: 'Requirement Gathering', description: 'Finalize features with stakeholders.', status: 'To-do' },
@@ -113,7 +71,7 @@ export const projects: Project[] = [
     deadline: '2024-07-30',
     cost: 800000,
     status: 'Completed',
-    contractorIds: [],
+    clientId: 'cl3',
     imageUrl: 'https://picsum.photos/seed/project4/600/400',
     tasks: [],
     updates: [],

@@ -1,15 +1,26 @@
 import { notFound } from 'next/navigation';
-import { projects } from '@/lib/data';
 
 import { ProjectHeader } from '@/components/projects/project-header';
-import { AssignedContractors } from '@/components/projects/assigned-contractors';
 import { TaskList } from '@/components/projects/task-list';
 import { ProgressUpdates } from '@/components/projects/progress-updates';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import type { Project } from '@/lib/types';
+import { getProjectById } from '@/lib/services/project-api-service';
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
-    const project = projects.find(p => p.id === params.id);
+async function getProject(id: string): Promise<Project | null> {
+    try {
+        // UIL calls the Frontend API Service
+        return await getProjectById(id);
+    } catch (error) {
+        console.error("Error fetching project:", error);
+        return null;
+    }
+}
+
+
+export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
+    const project = await getProject(params.id);
 
     if (!project) {
         notFound();
@@ -40,7 +51,6 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                             <Progress value={progress} aria-label={`${Math.round(progress)}% complete`} />
                         </CardContent>
                     </Card>
-                    <AssignedContractors project={project} />
                     <TaskList project={project} />
                 </div>
             </div>

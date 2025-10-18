@@ -1,10 +1,25 @@
+
 import { PlusCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/projects/project-card"
-import { projects } from "@/lib/data"
+import type { Project } from "@/lib/types";
+import { getProjects as fetchProjects } from "@/lib/services/project-api-service";
 
-export default function ProjectsPage() {
+async function getProjects(): Promise<Project[]> {
+  try {
+    // UIL calls the Frontend API Service
+    return await fetchProjects();
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    return []; // Return empty array on error
+  }
+}
+
+
+export default async function ProjectsPage() {
+  const projects: Project[] = await getProjects();
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex items-center">
@@ -25,6 +40,9 @@ export default function ProjectsPage() {
         {projects.map(project => (
           <ProjectCard key={project.id} project={project} />
         ))}
+        {projects.length === 0 && (
+            <p className="text-muted-foreground col-span-full">No projects found.</p>
+        )}
       </div>
     </div>
   )
