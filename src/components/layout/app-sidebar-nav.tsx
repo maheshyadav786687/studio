@@ -130,7 +130,7 @@ type NavItem = {
   subItems?: NavItem[]
 }
 
-const NavLink = ({ item, pathname, isSubItem = false }: { item: NavItem; pathname: string; isSubItem?: boolean }) => {
+const NavLink = ({ item, pathname }: { item: NavItem; pathname: string }) => {
     const { href, icon: Icon, label } = item;
     const isLinkActive = href && href !== '#' && pathname.startsWith(href);
   
@@ -139,8 +139,7 @@ const NavLink = ({ item, pathname, isSubItem = false }: { item: NavItem; pathnam
         href={href || "#"}
         className={cn(
           "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-          isLinkActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "",
-          isSubItem ? "" : ""
+          isLinkActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""
         )}
       >
         {Icon && <Icon className="h-4 w-4" />}
@@ -152,6 +151,12 @@ const NavLink = ({ item, pathname, isSubItem = false }: { item: NavItem; pathnam
 
 export function AppSidebarNav() {
   const pathname = usePathname();
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const activeParent = navItems.find(
     item =>
       item.subItems?.some(sub => sub.href && sub.href !== '#' && pathname.startsWith(sub.href))
@@ -169,39 +174,55 @@ export function AppSidebarNav() {
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <Accordion
-          type="single"
-          collapsible
-          className="w-full px-2 lg:px-4 space-y-1 py-2"
-          defaultValue={activeParent?.label}
-        >
-          {navItems.map(item => (
-             item.subItems ? (
-                <AccordionItem key={item.label} value={item.label} className="border-b-0">
-                  <AccordionTrigger
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline",
-                      item.subItems?.some(sub => sub.href && sub.href !== '#' && pathname.startsWith(sub.href)) ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <item.icon className="h-4 w-4" />
-                      <span className="flex-1 text-left">{item.label}</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="pl-4 pb-0">
-                    <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
-                      {item.subItems.map(subItem => (
-                        <NavLink key={subItem.label} item={subItem} pathname={pathname} isSubItem={true} />
-                      ))}
-                    </nav>
-                  </AccordionContent>
-                </AccordionItem>
-              ) : (
-                <NavLink key={item.label} item={item} pathname={pathname} />
-              )
-          ))}
-        </Accordion>
+        {isClient ? (
+             <Accordion
+             type="single"
+             collapsible
+             className="w-full px-2 lg:px-4 space-y-1 py-2"
+             defaultValue={activeParent?.label}
+           >
+             {navItems.map(item => (
+                item.subItems ? (
+                   <AccordionItem key={item.label} value={item.label} className="border-b-0">
+                     <AccordionTrigger
+                       className={cn(
+                         "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:no-underline",
+                         item.subItems?.some(sub => sub.href && sub.href !== '#' && pathname.startsWith(sub.href)) ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""
+                       )}
+                     >
+                       <div className="flex items-center gap-3">
+                         <item.icon className="h-4 w-4" />
+                         <span className="flex-1 text-left">{item.label}</span>
+                       </div>
+                     </AccordionTrigger>
+                     <AccordionContent className="pl-4 pb-0">
+                       <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
+                         {item.subItems.map(subItem => (
+                           <NavLink key={subItem.label} item={subItem} pathname={pathname} />
+                         ))}
+                       </nav>
+                     </AccordionContent>
+                   </AccordionItem>
+                 ) : (
+                   <NavLink key={item.label} item={item} pathname={pathname} />
+                 )
+             ))}
+           </Accordion>
+        ) : (
+            // Render a non-interactive version on the server to prevent mismatch
+            <div className="w-full px-2 lg:px-4 space-y-1 py-2">
+                {navItems.map(item => (
+                    item.subItems ? (
+                        <div key={item.label} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground">
+                             <item.icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                        </div>
+                    ) : (
+                        <NavLink key={item.label} item={item} pathname={pathname} />
+                    )
+                ))}
+            </div>
+        )}
       </div>
     </div>
   )
