@@ -130,38 +130,32 @@ type NavItem = {
   subItems?: NavItem[]
 }
 
-const NavLink = ({ item, pathname }: { item: NavItem, pathname: string }) => {
-  const { href, icon: Icon, label } = item;
-  const isLinkActive = href && href !=='#' && pathname.startsWith(href);
+const NavLink = ({ item, pathname, isSubItem = false }: { item: NavItem; pathname: string; isSubItem?: boolean }) => {
+    const { href, icon: Icon, label } = item;
+    const isLinkActive = href && href !== '#' && pathname.startsWith(href);
+  
+    return (
+      <Link
+        href={href || "#"}
+        className={cn(
+          "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+          isLinkActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "",
+          isSubItem ? "" : ""
+        )}
+      >
+        {Icon && <Icon className="h-4 w-4" />}
+        {label}
+      </Link>
+    );
+};
 
-  return (
-    <Link
-      href={href || "#"}
-      className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-        isLinkActive
-          ? "bg-sidebar-accent text-sidebar-accent-foreground"
-          : ""
-      )}
-    >
-      {Icon && <Icon className="h-4 w-4" />}
-      {label}
-    </Link>
-  )
-}
 
 export function AppSidebarNav() {
   const pathname = usePathname();
-  const [value, setValue] = React.useState("");
-
-  React.useEffect(() => {
-    const activeParent = navItems.find(
-      item =>
-        item.subItems?.some(sub => sub.href && sub.href !== '#' && pathname.startsWith(sub.href))
-    );
-    setValue(activeParent?.label || "");
-  }, [pathname]);
-
+  const activeParent = navItems.find(
+    item =>
+      item.subItems?.some(sub => sub.href && sub.href !== '#' && pathname.startsWith(sub.href))
+  );
 
   return (
     <div className="flex h-full max-h-screen flex-col gap-2 bg-sidebar text-sidebar-foreground">
@@ -179,8 +173,7 @@ export function AppSidebarNav() {
           type="single"
           collapsible
           className="w-full px-2 lg:px-4 space-y-1 py-2"
-          value={value}
-          onValueChange={setValue}
+          defaultValue={activeParent?.label}
         >
           {navItems.map(item => (
              item.subItems ? (
@@ -199,7 +192,7 @@ export function AppSidebarNav() {
                   <AccordionContent className="pl-4 pb-0">
                     <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
                       {item.subItems.map(subItem => (
-                        <NavLink key={subItem.label} item={subItem} pathname={pathname} />
+                        <NavLink key={subItem.label} item={subItem} pathname={pathname} isSubItem={true} />
                       ))}
                     </nav>
                   </AccordionContent>
