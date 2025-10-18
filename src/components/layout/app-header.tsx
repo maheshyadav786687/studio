@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { CircleUser, Menu, Package2, Search, ChevronRight } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -53,6 +54,11 @@ const Breadcrumb = () => {
 
 
 export function AppHeader() {
+  const [isClient, setIsClient] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   return (
     <header className="flex h-14 items-center gap-4 border-b bg-card px-4 lg:h-[60px] lg:px-6 sticky top-0 z-30">
@@ -69,7 +75,7 @@ export function AppHeader() {
       </Sheet>
 
       <div className="w-full flex-1">
-         <Breadcrumb />
+         {isClient && <Breadcrumb />}
       </div>
       
       <div className="flex items-center gap-4">
