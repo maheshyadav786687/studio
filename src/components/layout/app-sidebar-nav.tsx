@@ -11,7 +11,6 @@ import {
   CircleDollarSign,
   BarChart3,
   Settings,
-  User,
   Building2,
   FileText,
   ClipboardList,
@@ -37,6 +36,7 @@ import {
   Warehouse,
   Ship,
   UserPlus,
+  GanttChartSquare,
 } from "lucide-react"
 import {
   Accordion,
@@ -44,7 +44,6 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
-import { GanttChartSquare } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 
@@ -54,7 +53,7 @@ const navItems = [
     label: "Clients",
     icon: Users,
     subItems: [
-      { href: "#", icon: User, label: "Clients" },
+      { href: "#", icon: Users, label: "Clients" },
       { href: "#", icon: Building2, label: "Sites" },
       { href: "#", icon: FileText, label: "Quotes" },
       { href: "#", icon: ClipboardList, label: "Work Orders" },
@@ -160,6 +159,9 @@ const NavLink = ({ item, pathname, isSubItem = false }: NavLinkProps) => {
     subItems?.some(sub =>
       sub.subItems?.some(s => s.href && pathname.startsWith(s.href))
     )
+  
+  const isLinkActive = href && pathname.startsWith(href);
+
 
   if (subItems) {
     const content = (
@@ -224,7 +226,7 @@ const NavLink = ({ item, pathname, isSubItem = false }: NavLinkProps) => {
       href={href || "#"}
       className={cn(
         "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-        pathname === href
+        isLinkActive
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
           : ""
       )}
@@ -237,18 +239,17 @@ const NavLink = ({ item, pathname, isSubItem = false }: NavLinkProps) => {
 
 export function AppSidebarNav() {
   const pathname = usePathname()
+  
   const activeParent = navItems.find(
     item =>
       item.href !== '/admin/dashboard' &&
+      item.subItems &&
       (item.href === pathname ||
         item.subItems?.some(sub => sub.href && pathname.startsWith(sub.href)) ||
         item.subItems?.some(sub =>
           sub.subItems?.some(s => s.href && pathname.startsWith(s.href))
         ))
   )
-
-  const dashboardItem = navItems.find(item => item.href === '/admin/dashboard')
-  const menuItems = navItems.filter(item => item.subItems)
 
   return (
     <div className="flex h-full max-h-screen flex-col gap-2 bg-sidebar text-sidebar-foreground">
@@ -262,21 +263,13 @@ export function AppSidebarNav() {
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <nav className="grid items-start px-2 text-sm font-medium lg:px-4 py-2 gap-1">
-          {dashboardItem && (
-            <NavLink
-              item={dashboardItem}
-              pathname={pathname}
-            />
-          )}
-        </nav>
         <Accordion
           type="single"
           collapsible
-          className="w-full px-2 lg:px-4 space-y-1"
+          className="w-full px-2 lg:px-4 space-y-1 py-2"
           defaultValue={activeParent?.label}
         >
-          {menuItems.map(item => (
+          {navItems.map(item => (
             <NavLink
               key={item.label}
               item={item as NavItem}
