@@ -1,8 +1,6 @@
 // This file is responsible for providing the correct database client
 // based on the connection string.
 'use server';
-require('dotenv').config({ path: require('path').resolve(process.cwd(), '.env') });
-
 import sql from 'mssql';
 
 let pool: sql.ConnectionPool | null = null;
@@ -23,7 +21,8 @@ async function getMssqlDb(): Promise<sql.ConnectionPool> {
     return pool;
   } catch (err) {
     console.error('MS SQL connection failed:', err);
-    throw new Error('Failed to connect to the MS SQL database.');
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    throw new Error(`Failed to connect to the MS SQL database: ${errorMessage}`);
   }
 }
 
