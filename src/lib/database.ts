@@ -63,19 +63,17 @@ export async function findClientByEmail(email: string): Promise<Client | undefin
 
 export async function createClient(clientData: ClientCreateDto): Promise<Client> {
    const db = await getDb();
-   const newId = `cl${Date.now()}`;
    // The avatar URL is now generated here, but it could come from an external service.
-   const avatarUrl = `https://picsum.photos/seed/${newId}/100/100`;
+   const avatarUrl = `https://picsum.photos/seed/${Date.now()}/100/100`;
 
    const query = `
-    INSERT INTO Clients (id, name, email, phone, company, status, avatarUrl)
+    INSERT INTO Clients (name, email, phone, company, status, avatarUrl)
     OUTPUT INSERTED.*
-    VALUES (@id, @name, @email, @phone, @company, @status, @avatarUrl);
+    VALUES (@name, @email, @phone, @company, @status, @avatarUrl);
    `;
 
    try {
      const result = await db.request()
-       .input('id', sql.VarChar, newId)
        .input('name', sql.NVarChar, clientData.name)
        .input('email', sql.NVarChar, clientData.email)
        .input('phone', sql.VarChar, clientData.phone)
