@@ -33,7 +33,6 @@ import {
   FileCog,
   UserCog,
   CreditCard,
-  KeyRound,
   UserCircle,
   Warehouse,
   Ship,
@@ -240,13 +239,15 @@ export function AppSidebarNav() {
   const pathname = usePathname()
   const activeParent = navItems.find(
     item =>
-      item.subItems?.some(sub => sub.href && pathname.startsWith(sub.href)) ||
-      item.subItems?.some(sub =>
-        sub.subItems?.some(s => s.href && pathname.startsWith(s.href))
-      )
+      item.href !== '/admin/dashboard' &&
+      (item.href === pathname ||
+        item.subItems?.some(sub => sub.href && pathname.startsWith(sub.href)) ||
+        item.subItems?.some(sub =>
+          sub.subItems?.some(s => s.href && pathname.startsWith(s.href))
+        ))
   )
 
-  const dashboardItem = navItems.find(item => !item.subItems)
+  const dashboardItem = navItems.find(item => item.href === '/admin/dashboard')
   const menuItems = navItems.filter(item => item.subItems)
 
   return (
