@@ -11,7 +11,7 @@ export function RecentUpdates() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="font-headline">Recent Contractor Updates</CardTitle>
+        <CardTitle className="font-headline">Recent Project Updates</CardTitle>
         <CardDescription>Latest updates from ongoing projects.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -26,7 +26,7 @@ export function RecentUpdates() {
                 <p className="text-sm font-medium leading-none">
                   {update.author} <span className="text-xs text-muted-foreground">on {update.projectName}</span>
                 </p>
-                <p className="text-sm text-muted-foreground">{update.summary}</p>
+                <p className="text-sm text-muted-foreground">{update.summary || update.content}</p>
               </div>
             </div>
           ))}

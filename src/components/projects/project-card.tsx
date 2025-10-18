@@ -5,18 +5,14 @@ import { format, parseISO } from "date-fns";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import type { Project } from "@/lib/types";
-import { contractors } from "@/lib/data";
 
 type ProjectCardProps = {
     project: Project;
 }
 
 export function ProjectCard({ project }: ProjectCardProps) {
-    const assignedContractors = contractors.filter(c => project.contractorIds.includes(c.id));
-    
     const tasksCompleted = project.tasks.filter(t => t.status === 'Done').length;
     const totalTasks = project.tasks.length;
     const progress = totalTasks > 0 ? (tasksCompleted / totalTasks) * 100 : 0;
@@ -59,15 +55,7 @@ export function ProjectCard({ project }: ProjectCardProps) {
                     <Progress value={progress} aria-label={`${Math.round(progress)}% complete`} />
                 </div>
             </CardContent>
-            <CardFooter className="flex justify-between items-center p-4 pt-0">
-                <div className="flex -space-x-2">
-                    {assignedContractors.map(c => (
-                        <Avatar key={c.id} className="border-2 border-card">
-                            <AvatarImage src={c.avatarUrl} alt={c.name} data-ai-hint="person portrait" />
-                            <AvatarFallback>{c.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                    ))}
-                </div>
+            <CardFooter className="flex justify-end items-center p-4 pt-0">
                 <div className="text-sm text-muted-foreground">
                     Deadline: {format(parseISO(project.deadline), "MMM d, yyyy")}
                 </div>

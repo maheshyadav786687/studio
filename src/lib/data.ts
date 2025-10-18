@@ -3,48 +3,7 @@ import { PlaceHolderImages } from './placeholder-images';
 
 const getImageUrl = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
 
-export const contractors: Contractor[] = [
-  {
-    id: 'c1',
-    name: 'Anjali Sharma',
-    email: 'anjali.sharma@example.com',
-    phone: '+91 98765 43210',
-    skills: ['React', 'Node.js', 'UI/UX Design'],
-    availability: 'Available',
-    avatarUrl: getImageUrl('avatar1'),
-    performance: 92,
-  },
-  {
-    id: 'c2',
-    name: 'Rohan Verma',
-    email: 'rohan.verma@example.com',
-    phone: '+91 99887 76655',
-    skills: ['Angular', 'Firebase', 'DevOps'],
-    availability: 'On Project',
-    avatarUrl: getImageUrl('avatar2'),
-    performance: 88,
-  },
-  {
-    id: 'c3',
-    name: 'Priya Patel',
-    email: 'priya.patel@example.com',
-    phone: '+91 88776 65544',
-    skills: ['Vue.js', 'Python', 'Django'],
-    availability: 'Available',
-    avatarUrl: getImageUrl('avatar3'),
-    performance: 95,
-  },
-  {
-    id: 'c4',
-    name: 'Sameer Khan',
-    email: 'sameer.khan@example.com',
-    phone: '+91 77665 54433',
-    skills: ['Next.js', 'GraphQL', 'Tailwind CSS'],
-    availability: 'Unavailable',
-    avatarUrl: getImageUrl('avatar4'),
-    performance: 85,
-  },
-];
+export const contractors: Contractor[] = [];
 
 export const projects: Project[] = [
   {

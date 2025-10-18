@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { projects } from '@/lib/data';
 
 import { ProjectHeader } from '@/components/projects/project-header';
-import { AssignedContractors } from '@/components/projects/assigned-contractors';
 import { TaskList } from '@/components/projects/task-list';
 import { ProgressUpdates } from '@/components/projects/progress-updates';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,7 +39,6 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                             <Progress value={progress} aria-label={`${Math.round(progress)}% complete`} />
                         </CardContent>
                     </Card>
-                    <AssignedContractors project={project} />
                     <TaskList project={project} />
                 </div>
             </div>

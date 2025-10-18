@@ -1,6 +1,5 @@
 'use server';
 
-import { summarizeContractorUpdates } from '@/ai/flows/summarize-contractor-updates';
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 
@@ -23,9 +22,9 @@ export async function generateSummaryAction(prevState: any, formData: FormData) 
   }
 
   try {
-    const { summary } = await summarizeContractorUpdates({
-      contractorUpdate: validatedFields.data.updateText,
-    });
+    // AI summarization logic would go here.
+    // Since the flow was removed, we'll return a placeholder.
+    const summary = `This is a placeholder AI summary for the update: "${validatedFields.data.updateText.substring(0, 50)}..."`;
     
     // In a real app, you would save the new update and summary to the database here.
     // For this demo, we just return the summary.

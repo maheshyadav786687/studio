@@ -18,22 +18,22 @@ export const db = {
   contractors: {
     findMany: async (): Promise<Contractor[]> => {
       await dbDelay(100);
-      return contractors;
+      return [];
     },
     findById: async (id: string): Promise<Contractor | undefined> => {
       await dbDelay(100);
-      return contractors.find(c => c.id === id);
+      return undefined;
     },
     create: async (data: Omit<Contractor, 'id' | 'avatarUrl' | 'performance' | 'phone'>): Promise<Contractor> => {
         await dbDelay(100);
+        // This will no longer do anything, returning a dummy object
         const newContractor: Contractor = {
             id: `c${contractors.length + 1}`,
             ...data,
-            phone: '', // Not collected in form
-            performance: Math.floor(Math.random() * 21) + 80, // Random performance
-            avatarUrl: `https://picsum.photos/seed/newavatar${contractors.length}/100/100`,
+            phone: '', 
+            performance: 0,
+            avatarUrl: '',
         };
-        contractors.unshift(newContractor); // Add to the beginning of the list
         return newContractor;
     }
   },
