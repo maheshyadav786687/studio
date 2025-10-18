@@ -1,5 +1,9 @@
 'use server';
 
+// DAL (Data Access Layer)
+// This layer is responsible for all communication with the database.
+// It should only be called by the BLL.
+
 import { projects as mockProjects } from './data';
 import type { Project, Client } from './types';
 import { PlaceHolderImages } from './placeholder-images';
@@ -63,8 +67,12 @@ export const db = {
   },
   clients: {
     findMany: async (): Promise<Client[]> => {
-        await dbDelay(100);
+        await dbDelay(50);
         return clients;
+    },
+    findByEmail: async(email: string): Promise<Client | undefined> => {
+        await dbDelay(50);
+        return clients.find(c => c.email.toLowerCase() === email.toLowerCase());
     },
     create: async (clientData: Omit<Client, 'id' | 'avatarUrl' | 'projectsCount'>): Promise<Client> => {
         await dbDelay(100);
@@ -74,7 +82,7 @@ export const db = {
             avatarUrl: `https://picsum.photos/seed/${Date.now()}/100/100`,
             projectsCount: 0,
         };
-        clients.push(newClient);
+        clients.unshift(newClient); // Add to the beginning of the array
         return newClient;
     },
     update: async (id: string, clientData: Partial<Omit<Client, 'id' | 'avatarUrl' | 'projectsCount'>>): Promise<Client | undefined> => {

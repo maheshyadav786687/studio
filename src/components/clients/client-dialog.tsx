@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useFormState } from 'react-dom';
-import { saveClientAction } from '@/app/admin/clients/actions';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -18,52 +20,90 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import type { Client } from '@/lib/types';
-import React from 'react';
+import { Client, ClientSchema } from '@/lib/types';
 
 type ClientDialogProps = {
   client?: Client;
   children: React.ReactNode;
   onOpenChange?: (open: boolean) => void;
+  open?: boolean;
 };
 
-export function ClientDialog({ client, children, onOpenChange }: ClientDialogProps) {
+// DTO for the form
+const FormSchema = ClientSchema.omit({ id: true, avatarUrl: true, projectsCount: true });
+type ClientFormData = z.infer<typeof FormSchema>;
+
+export function ClientDialog({ client, children, onOpenChange, open: parentOpen }: ClientDialogProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const router = useRouter();
 
-  const initialState = { message: null, errors: {} };
-  const [state, formAction] = useFormState(saveClientAction, initialState);
-
-  React.useEffect(() => {
-    if (state.message) {
-      if (state.message === 'Client saved successfully.') {
-        toast({
-          title: 'Success',
-          description: state.message,
-        });
-        setOpen(false);
-        if (onOpenChange) onOpenChange(false);
-      } else if (state.message !== 'Validation failed.') {
-        toast({
-          title: 'Error',
-          description: state.message,
-          variant: 'destructive',
-        });
-      }
-    }
-  }, [state, toast, onOpenChange]);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+    control,
+  } = useForm<ClientFormData>({
+    resolver: zodResolver(FormSchema),
+    defaultValues: {
+      name: client?.name || '',
+      email: client?.email || '',
+      phone: client?.phone || '',
+      company: client?.company || '',
+      status: client?.status || 'Active',
+    },
+  });
 
   const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      reset(); // Reset form when dialog closes
+    }
     setOpen(isOpen);
     if (onOpenChange) onOpenChange(isOpen);
   };
+  
+  const currentOpen = parentOpen !== undefined ? parentOpen : open;
+
+  async function onSubmit(data: ClientFormData) {
+    // UIL calls the API Layer
+    const url = client ? `/api/clients/${client.id}` : '/api/clients';
+    const method = client ? 'PATCH' : 'POST';
+
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Something went wrong.');
+      }
+      
+      toast({
+        title: 'Success',
+        description: `Client ${client ? 'updated' : 'saved'} successfully.`,
+      });
+
+      router.refresh(); // Re-fetch data on the server and re-render
+      handleOpenChange(false);
+
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save client.',
+        variant: 'destructive',
+      });
+    }
+  }
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={currentOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
-        <form action={formAction}>
-            {client?.id && <input type="hidden" name="id" value={client.id} />}
+        <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>{client ? 'Edit Client' : 'Add New Client'}</DialogTitle>
             <DialogDescription>
@@ -75,46 +115,52 @@ export function ClientDialog({ client, children, onOpenChange }: ClientDialogPro
               <Label htmlFor="name" className="text-right">
                 Name
               </Label>
-              <Input id="name" name="name" defaultValue={client?.name} className="col-span-3" />
-              {state.errors?.name && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{state.errors.name[0]}</p>}
+              <Input id="name" {...register('name')} className="col-span-3" />
+              {errors.name && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.name.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="email" className="text-right">
                 Email
               </Label>
-              <Input id="email" name="email" type="email" defaultValue={client?.email} className="col-span-3" />
-               {state.errors?.email && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{state.errors.email[0]}</p>}
+              <Input id="email" type="email" {...register('email')} className="col-span-3" />
+              {errors.email && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.email.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="phone" className="text-right">
                 Phone
               </Label>
-              <Input id="phone" name="phone" defaultValue={client?.phone} className="col-span-3" />
-               {state.errors?.phone && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{state.errors.phone[0]}</p>}
+              <Input id="phone" {...register('phone')} className="col-span-3" />
+              {errors.phone && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.phone.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="company" className="text-right">
                 Company
               </Label>
-              <Input id="company" name="company" defaultValue={client?.company} className="col-span-3" />
-               {state.errors?.company && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{state.errors.company[0]}</p>}
+              <Input id="company" {...register('company')} className="col-span-3" />
+              {errors.company && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.company.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Status</Label>
-                <RadioGroup name="status" defaultValue={client?.status || 'Active'} className="col-span-3 flex gap-4">
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Active" id="status-active" />
-                        <Label htmlFor="status-active">Active</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="Inactive" id="status-inactive" />
-                        <Label htmlFor="status-inactive">Inactive</Label>
-                    </div>
-                </RadioGroup>
+              <Label className="text-right">Status</Label>
+              <RadioGroup
+                defaultValue={client?.status || 'Active'}
+                className="col-span-3 flex gap-4"
+                onValueChange={(value) => control._fields.status?.onChange(value)}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Active" id="status-active" {...register('status')} />
+                  <Label htmlFor="status-active">Active</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="Inactive" id="status-inactive" {...register('status')} />
+                  <Label htmlFor="status-inactive">Inactive</Label>
+                </div>
+              </RadioGroup>
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit">Save changes</Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save changes'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

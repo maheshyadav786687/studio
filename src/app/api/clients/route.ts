@@ -1,12 +1,37 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+import { getClients, createClient } from '@/lib/bll/client-bll';
+import { ClientSchema } from '@/lib/types';
 
 export async function GET() {
   try {
-    const clients = await db.clients.findMany();
+    // API layer calls the BLL
+    const clients = await getClients();
+    // API layer returns DTOs
     return NextResponse.json(clients);
   } catch (error) {
     console.error('[API_CLIENTS_GET]', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
+
+export async function POST(req: Request) {
+  try {
+    const json = await req.json();
+    // API layer validates the DTO
+    const validatedFields = ClientSchema.omit({ id: true, avatarUrl: true, projectsCount: true }).safeParse(json);
+    
+    if (!validatedFields.success) {
+      return NextResponse.json({ error: 'Invalid fields', details: validatedFields.error.flatten() }, { status: 400 });
+    }
+
+    // API layer calls the BLL
+    const newClient = await createClient(validatedFields.data);
+
+    // API layer returns a DTO
+    return NextResponse.json(newClient, { status: 201 });
+  } catch (error) {
+    console.error('[API_CLIENTS_POST]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

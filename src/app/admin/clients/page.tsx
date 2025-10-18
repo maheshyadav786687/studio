@@ -5,7 +5,7 @@ import { ClientDialog } from "@/components/clients/client-dialog";
 import type { Client } from "@/lib/types";
 
 async function getClients(): Promise<Client[]> {
-  // In a real app, you'd fetch from your absolute URL
+  // UIL calls the API Layer
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/clients`, { cache: 'no-store' });
     if (!res.ok) {

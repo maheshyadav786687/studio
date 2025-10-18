@@ -1,4 +1,5 @@
 'use client';
+import { useRouter } from 'next/navigation';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +14,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import type { Client } from '@/lib/types';
 import React from 'react';
-import { deleteClientAction } from '@/app/admin/clients/actions';
 
 type DeleteClientDialogProps = {
   client: Client;
@@ -24,20 +24,37 @@ type DeleteClientDialogProps = {
 
 export function DeleteClientDialog({ client, children, onOpenChange, open }: DeleteClientDialogProps) {
   const { toast } = useToast();
+  const router = useRouter();
+  const [isDeleting, setIsDeleting] = React.useState(false);
 
   const handleDelete = async () => {
-    const result = await deleteClientAction(client.id);
-    if (result.message === 'Client deleted successfully.') {
+    setIsDeleting(true);
+    // UIL calls the API layer
+    try {
+      const response = await fetch(`/api/clients/${client.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete client.');
+      }
+      
       toast({
         title: 'Success',
-        description: result.message,
+        description: 'Client deleted successfully.',
       });
-    } else {
+
+      router.refresh(); // Re-fetch data and re-render
+      if (onOpenChange) onOpenChange(false);
+
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: result.message,
+        description: error.message,
         variant: 'destructive',
       });
+    } finally {
+        setIsDeleting(false);
     }
   };
 
@@ -54,8 +71,8 @@ export function DeleteClientDialog({ client, children, onOpenChange, open }: Del
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete} className="bg-destructive hover:bg-destructive/90">
-            Delete
+          <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
