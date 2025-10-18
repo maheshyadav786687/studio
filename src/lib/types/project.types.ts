@@ -23,7 +23,7 @@ export type Project = {
   deadline: string;
   cost: number;
   status: 'Not Started' | 'In Progress' | 'Completed' | 'Delayed';
-  contractorIds: string[];
+  clientId: string;
   tasks: Task[];
   updates: ProjectUpdate[];
   imageUrl: string;

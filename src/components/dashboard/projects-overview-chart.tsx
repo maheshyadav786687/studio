@@ -2,27 +2,34 @@
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { projects } from '@/lib/data';
+import { getProjects } from '@/lib/services/project-api-service';
+import { Project } from '@/lib/types';
+import { useEffect, useState } from 'react';
 
-const getProjectStatusCounts = () => {
-  const counts = {
-    'In Progress': 0,
-    'Completed': 0,
-    'Not Started': 0,
-    'Delayed': 0,
-  };
-
-  projects.forEach(project => {
-    if (project.status in counts) {
-      counts[project.status]++;
-    }
-  });
-
-  return Object.entries(counts).map(([name, value]) => ({ name, total: value }));
-};
 
 export function ProjectsOverviewChart() {
-  const data = getProjectStatusCounts();
+  const [data, setData] = useState<any[]>([]);
+
+  useEffect(() => {
+    async function fetchData() {
+        const projects = await getProjects();
+        const counts = {
+            'In Progress': 0,
+            'Completed': 0,
+            'Not Started': 0,
+            'Delayed': 0,
+        };
+
+        projects.forEach(project => {
+            if (project.status in counts) {
+                counts[project.status]++;
+            }
+        });
+        
+        setData(Object.entries(counts).map(([name, value]) => ({ name, total: value })));
+    }
+    fetchData();
+  }, []);
 
   return (
     <Card className="lg:col-span-2">

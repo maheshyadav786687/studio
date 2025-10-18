@@ -5,12 +5,10 @@
 'use server';
 
 import { db } from '@/lib/database';
-import type { Client } from '@/lib/types';
-import { z } from 'zod';
-import { ClientSchema } from '@/lib/types';
+import type { Client, ClientFormData } from '@/lib/types';
 
-type ClientCreateDto = Omit<Client, 'id' | 'avatarUrl' | 'projectsCount'>;
-type ClientUpdateDto = Partial<ClientCreateDto>;
+export type ClientCreateDto = Omit<Client, 'id' | 'avatarUrl' | 'projectsCount'>;
+export type ClientUpdateDto = Partial<ClientCreateDto>;
 
 
 // BLL function to get all clients
@@ -24,17 +22,14 @@ export async function getClients(): Promise<Client[]> {
 
 // BLL function to create a client
 export async function createClient(clientDto: ClientCreateDto): Promise<Client> {
-  // BLL validates business rules (can be more complex than just schema validation)
-  const validatedDto = ClientSchema.omit({ id: true, avatarUrl: true, projectsCount: true }).parse(clientDto);
-
   // Business logic: e.g. check for duplicate emails
-  const existingClient = await db.clients.findByEmail(validatedDto.email);
+  const existingClient = await db.clients.findByEmail(clientDto.email);
   if (existingClient) {
     throw new Error('A client with this email already exists.');
   }
 
   // BLL converts DTO to a model if necessary and calls DAL
-  const newClient = await db.clients.create(validatedDto);
+  const newClient = await db.clients.create(clientDto);
 
   // BLL returns a DTO
   return newClient;
@@ -42,11 +37,8 @@ export async function createClient(clientDto: ClientCreateDto): Promise<Client> 
 
 // BLL function to update a client
 export async function updateClient(id: string, clientDto: ClientUpdateDto): Promise<Client | undefined> {
-  // BLL validates business rules
-  const validatedDto = ClientSchema.partial().parse(clientDto);
-  
   // BLL calls DAL
-  const updatedClient = await db.clients.update(id, validatedDto);
+  const updatedClient = await db.clients.update(id, clientDto);
   
   // BLL returns a DTO
   return updatedClient;

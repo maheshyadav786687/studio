@@ -4,102 +4,138 @@
 // This layer is responsible for all communication with the database.
 // It should only be called by the BLL.
 
-import { projects as mockProjects } from './data';
+import sql from 'mssql';
 import type { Project, Client } from './types';
-import { PlaceHolderImages } from './placeholder-images';
+import type { ClientCreateDto } from './bll/client-bll';
+
+const config = {
+  connectionString: process.env.DATABASE_URL,
+};
+
+if (!config.connectionString) {
+  throw new Error('DATABASE_URL environment variable is not set.');
+}
+
+// In a real production app, you might want to manage a connection pool
+// more carefully, but for this purpose, connecting on each request is fine.
+const getDb = () => sql.connect(config);
 
 /**
- * This file simulates a database by providing functions to access and modify mock data.
- * NOTE: Since this is an in-memory "database", changes will be lost on server restart.
+ * NOTE: The queries below assume you have created the necessary tables.
+ * Example SQL for Clients table:
+ * CREATE TABLE Clients (
+ *   id NVARCHAR(50) PRIMARY KEY,
+ *   name NVARCHAR(255) NOT NULL,
+ *   email NVARCHAR(255) NOT NULL UNIQUE,
+ *   phone NVARCHAR(50),
+ *   company NVARCHAR(255),
+ *   avatarUrl NVARCHAR(MAX),
+ *   status NVARCHAR(20) CHECK (status IN ('Active', 'Inactive')),
+ *   projectsCount INT DEFAULT 0
+ * );
+ * 
+ * The project-related queries assume that `tasks` and `updates` are stored as JSON strings.
+ * This is a simplification. In a real-world scenario, you would have separate tables for Tasks and Updates.
  */
-
-// Simulate a database delay
-const dbDelay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-const getImageUrl = (id: string) => PlaceHolderImages.find(img => img.id === id)?.imageUrl || '';
-
-// Re-map projects to ensure they have the correct shape after type changes
-const projects: Project[] = mockProjects.map(p => ({...p}));
-
-const clients: Client[] = [
-    {
-        id: 'cl1',
-        name: 'Priya Sharma',
-        email: 'priya.sharma@example.com',
-        phone: '9876543210',
-        company: 'Innovate Solutions',
-        avatarUrl: getImageUrl('avatar3'),
-        projectsCount: 2,
-        status: 'Active',
-    },
-    {
-        id: 'cl2',
-        name: 'Amit Singh',
-        email: 'amit.singh@example.com',
-        phone: '9876543211',
-        company: 'TechCorp',
-        avatarUrl: getImageUrl('avatar4'),
-        projectsCount: 1,
-        status: 'Active',
-    },
-    {
-        id: 'cl3',
-        name: 'Sunita Devi',
-        email: 'sunita.devi@example.com',
-        phone: '9876543212',
-        company: 'BuildRight',
-        avatarUrl: getImageUrl('avatar1'),
-        projectsCount: 0,
-        status: 'Inactive',
-    },
-];
-
 export const db = {
   projects: {
     findMany: async (): Promise<Project[]> => {
-      await dbDelay(100);
-      return projects;
+      const pool = await getDb();
+      const result = await pool.request().query`SELECT * FROM Projects`;
+      return result.recordset.map(p => ({
+          ...p,
+          tasks: JSON.parse(p.tasks || '[]'),
+          updates: JSON.parse(p.updates || '[]'),
+          contractorIds: JSON.parse(p.contractorIds || '[]'),
+      })) as Project[];
     },
     findById: async (id: string): Promise<Project | undefined> => {
-      await dbDelay(100);
-      return projects.find(p => p.id === id);
+      const pool = await getDb();
+      const result = await pool.request()
+        .input('id', sql.NVarChar, id)
+        .query`SELECT * FROM Projects WHERE id = @id`;
+      
+      if (result.recordset.length === 0) {
+        return undefined;
+      }
+      const p = result.recordset[0];
+      return {
+          ...p,
+          tasks: JSON.parse(p.tasks || '[]'),
+          updates: JSON.parse(p.updates || '[]'),
+          contractorIds: JSON.parse(p.contractorIds || '[]'),
+      } as Project;
     },
   },
   clients: {
     findMany: async (): Promise<Client[]> => {
-        await dbDelay(50);
-        return clients;
+      const pool = await getDb();
+      // A more complex query to calculate projectsCount on the fly
+      const result = await pool.request().query`
+        SELECT 
+          c.*, 
+          (SELECT COUNT(*) FROM Projects p WHERE c.id = p.clientId) as projectsCount 
+        FROM Clients c
+      `;
+      return result.recordset as Client[];
     },
-    findByEmail: async(email: string): Promise<Client | undefined> => {
-        await dbDelay(50);
-        return clients.find(c => c.email.toLowerCase() === email.toLowerCase());
+    findByEmail: async (email: string): Promise<Client | undefined> => {
+      const pool = await getDb();
+      const result = await pool.request()
+        .input('email', sql.NVarChar, email)
+        .query`SELECT * FROM Clients WHERE email = @email`;
+      return result.recordset[0] as Client | undefined;
     },
-    create: async (clientData: Omit<Client, 'id' | 'avatarUrl' | 'projectsCount'>): Promise<Client> => {
-        await dbDelay(100);
-        const newClient: Client = {
-            ...clientData,
-            id: `cl${Date.now()}`,
-            avatarUrl: `https://picsum.photos/seed/${Date.now()}/100/100`,
-            projectsCount: 0,
-        };
-        clients.unshift(newClient); // Add to the beginning of the array
-        return newClient;
+    create: async (clientData: ClientCreateDto): Promise<Client> => {
+      const pool = await getDb();
+      const newId = `cl${Date.now()}`;
+      const avatarUrl = `https://picsum.photos/seed/${Date.now()}/100/100`;
+
+      await pool.request()
+        .input('id', sql.NVarChar, newId)
+        .input('name', sql.NVarChar, clientData.name)
+        .input('email', sql.NVarChar, clientData.email)
+        .input('phone', sql.NVarChar, clientData.phone)
+        .input('company', sql.NVarChar, clientData.company)
+        .input('avatarUrl', sql.NVarChar, avatarUrl)
+        .input('status', sql.NVarChar, clientData.status)
+        .query`INSERT INTO Clients (id, name, email, phone, company, avatarUrl, status) VALUES (@id, @name, @email, @phone, @company, @avatarUrl, @status)`;
+
+      const newClient: Client = {
+        ...clientData,
+        id: newId,
+        avatarUrl: avatarUrl,
+        projectsCount: 0,
+      };
+      return newClient;
     },
-    update: async (id: string, clientData: Partial<Omit<Client, 'id' | 'avatarUrl' | 'projectsCount'>>): Promise<Client | undefined> => {
-        await dbDelay(100);
-        const clientIndex = clients.findIndex(c => c.id === id);
-        if (clientIndex === -1) {
-            return undefined;
-        }
-        clients[clientIndex] = { ...clients[clientIndex], ...clientData };
-        return clients[clientIndex];
+    update: async (id: string, clientData: Partial<ClientCreateDto>): Promise<Client | undefined> => {
+      const pool = await getDb();
+      
+      const setClauses = Object.keys(clientData)
+        .map(key => `${key} = @${key}`)
+        .join(', ');
+
+      if (!setClauses) return undefined;
+
+      const request = pool.request().input('id', sql.NVarChar, id);
+      for (const [key, value] of Object.entries(clientData)) {
+          request.input(key, sql.NVarChar, value);
+      }
+
+      await request.query(`UPDATE Clients SET ${setClauses} WHERE id = @id`);
+
+      const result = await pool.request()
+          .input('id', sql.NVarChar, id)
+          .query`SELECT *, (SELECT COUNT(*) FROM Projects p WHERE p.clientId = c.id) as projectsCount FROM Clients c WHERE c.id = @id`;
+
+      return result.recordset[0] as Client | undefined;
     },
     delete: async (id: string): Promise<void> => {
-        await dbDelay(100);
-        const clientIndex = clients.findIndex(c => c.id === id);
-        if (clientIndex !== -1) {
-            clients.splice(clientIndex, 1);
-        }
+      const pool = await getDb();
+      await pool.request()
+        .input('id', sql.NVarChar, id)
+        .query`DELETE FROM Clients WHERE id = @id`;
     }
   }
 };
