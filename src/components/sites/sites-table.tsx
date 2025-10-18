@@ -171,7 +171,7 @@ export function SitesTable({ sites }: { sites: Site[] }) {
 
   return (
     <Card>
-      <CardContent>
+      <CardContent className="p-6">
         <div className="flex items-center justify-between py-4">
           <Input
             placeholder="Filter sites by name..."
@@ -246,7 +246,7 @@ export function SitesTable({ sites }: { sites: Site[] }) {
             </TableBody>
           </Table>
         </div>
-        <div className="flex items-center justify-between py-4">
+        <div className="flex items-center justify-between pt-4">
           <div className="flex-1 text-sm text-muted-foreground">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected.
