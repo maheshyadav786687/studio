@@ -11,7 +11,6 @@ import {
   CircleDollarSign,
   BarChart3,
   Settings,
-  KeyRound,
   User,
   Building2,
   FileText,
@@ -31,11 +30,16 @@ import {
   BookUser,
   FileBarChart2,
   Building,
-  File,
-  UserCog,
   FileCog,
+  UserCog,
   CreditCard,
-  UserCircle
+  KeyRound,
+  UserCircle,
+  Warehouse,
+  Ship,
+  UserPlus,
+  UserCheck,
+  UserX,
 } from 'lucide-react';
 import {
   Accordion,
@@ -66,9 +70,21 @@ const navItems = [
         { href: '/admin/projects', icon: Briefcase, label: 'Projects' },
         { href: '#', icon: ClipboardList, label: 'Tasks' },
         { href: '#', icon: CheckCircle, label: 'Subtasks' },
-        { href: '#', icon: AlertCircle, label: 'Issues' },
-        { href: '#', icon: FileText, label: 'Daily Log' },
+        { href: '#', icon: FileText, label: 'Daily Logs' },
         { href: '#', icon: Camera, label: 'Photos' },
+        { href: '#', icon: AlertCircle, label: 'Issues' },
+    ]
+  },
+   {
+    label: 'Workforce',
+    icon: HardHat,
+    subItems: [
+        { href: '/admin/contractors', icon: Users, label: 'Workers' },
+        { href: '#', icon: UserPlus, label: 'Subcontractors'},
+        { href: '#', icon: CalendarCheck, label: 'Attendance' },
+        { href: '#', icon: Landmark, label: 'Salary' },
+        { href: '#', icon: HandCoins, label: 'Advances' },
+        { href: '#', icon: CalendarOff, label: 'Leaves' },
     ]
   },
   {
@@ -77,19 +93,9 @@ const navItems = [
     subItems: [
         { href: '#', icon: GitPullRequest, label: 'Requests' },
         { href: '#', icon: Truck, label: 'Suppliers' },
-        { href: '#', icon: ClipboardList, label: 'Stock' },
+        { href: '#', icon: Warehouse, label: 'Stock' },
+        { href: '#', icon: Ship, label: 'Logistics' },
         { href: '#', icon: Wallet, label: 'Expenses' },
-    ]
-  },
-  {
-    label: 'Workers',
-    icon: HardHat,
-    subItems: [
-        { href: '/admin/contractors', icon: Users, label: 'Worker List' },
-        { href: '#', icon: CalendarCheck, label: 'Attendance' },
-        { href: '#', icon: Landmark, label: 'Salary' },
-        { href: '#', icon: HandCoins, label: 'Advances' },
-        { href: '#', icon: CalendarOff, label: 'Leaves' },
     ]
   },
    {
@@ -117,9 +123,10 @@ const navItems = [
     icon: BarChart3,
     subItems: [
         { href: '#', icon: Briefcase, label: 'Projects' },
-        { href: '#', icon: HardHat, label: 'Workers' },
+        { href: '#', icon: HardHat, label: 'Workforce' },
         { href: '#', icon: Package, label: 'Materials' },
         { href: '#', icon: Receipt, label: 'Billing' },
+        { href: '#', icon: CircleDollarSign, label: 'Finance' },
     ]
   },
   {
@@ -128,18 +135,12 @@ const navItems = [
     subItems: [
         { href: '#', icon: Building, label: 'Company' },
         { href: '#', icon: FileCog, label: 'GST / PDF' },
-        { href: '#', icon: UserCog, label: 'Users' },
+        { href: '#', icon: Users, label: 'Users' },
+        { href: '#', icon: UserCog, label: 'Roles' },
         { href: '#', icon: CreditCard, label: 'Plan' },
-    ]
-  },
-  {
-    label: 'Account',
-    icon: KeyRound,
-    subItems: [
-        { href: '/login', icon: KeyRound, label: 'Login' },
         { href: '#', icon: UserCircle, label: 'Profile' },
     ]
-  }
+  },
 ];
 
 
