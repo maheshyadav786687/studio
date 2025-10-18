@@ -1,0 +1,269 @@
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
+import { Quotation, QuotationFormSchema, Site } from '@/lib/types';
+import { createQuotation, updateQuotation } from '@/lib/services/quotation-api-service';
+import { getSites } from '@/lib/services/site-api-service';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Trash2, PlusCircle } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+
+type QuotationDialogProps = {
+  quotation?: Quotation;
+  children: React.ReactNode;
+  onOpenChange?: (open: boolean) => void;
+  open?: boolean;
+};
+
+type QuotationFormData = z.infer<typeof QuotationFormSchema>;
+
+export function QuotationDialog({ quotation, children, onOpenChange, open: parentOpen }: QuotationDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [sites, setSites] = useState<Site[]>([]);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    reset,
+    control,
+    watch,
+  } = useForm<QuotationFormData>({
+    resolver: zodResolver(QuotationFormSchema),
+    defaultValues: quotation ? 
+    { ...quotation, items: quotation.items || [] } :
+    {
+      title: '',
+      siteId: '',
+      status: 'Draft',
+      items: [],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'items',
+  });
+
+  const currentOpen = parentOpen !== undefined ? parentOpen : open;
+
+  useEffect(() => {
+    async function fetchSites() {
+      try {
+        const fetchedSites = await getSites();
+        setSites(fetchedSites);
+      } catch (error) {
+        console.error('Failed to fetch sites', error);
+      }
+    }
+    if (currentOpen) {
+      fetchSites();
+    }
+  }, [currentOpen]);
+  
+  const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      reset();
+    }
+    setOpen(isOpen);
+    if (onOpenChange) onOpenChange(isOpen);
+  };
+  
+  async function onSubmit(data: QuotationFormData) {
+    try {
+      if (quotation) {
+        await updateQuotation(quotation.id, data);
+      } else {
+        await createQuotation(data);
+      }
+      
+      toast({
+        title: 'Success',
+        description: `Quotation ${quotation ? 'updated' : 'created'} successfully.`,
+      });
+
+      router.refresh();
+      handleOpenChange(false);
+
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to save quotation.',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  const watchedItems = watch('items');
+  const totalAmount = watchedItems.reduce((acc, item) => {
+      const quantity = typeof item.quantity === 'string' ? parseFloat(item.quantity) : item.quantity;
+      const rate = typeof item.rate === 'string' ? parseFloat(item.rate) : item.rate;
+      return acc + (quantity || 0) * (rate || 0);
+  }, 0);
+
+
+  return (
+    <Dialog open={currentOpen} onOpenChange={handleOpenChange}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
+        <form onSubmit={handleSubmit(onSubmit)}>
+          <DialogHeader>
+            <DialogTitle>{quotation ? 'Edit Quotation' : 'Add New Quotation'}</DialogTitle>
+            <DialogDescription>
+              {quotation ? 'Update the details for this quotation.' : 'Enter the details for the new quotation.'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input id="title" {...register('title')} />
+                    {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
+                </div>
+                 <div className="space-y-2">
+                    <Label htmlFor="siteId">Site</Label>
+                    <Controller
+                        control={control}
+                        name="siteId"
+                        render={({ field }) => (
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <SelectTrigger>
+                                <SelectValue placeholder="Select a site" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                {sites.map((s) => (
+                                    <SelectItem key={s.id} value={s.id}>
+                                    {s.name} ({s.client?.name})
+                                    </SelectItem>
+                                ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                    />
+                    {errors.siteId && <p className="text-xs text-red-500">{errors.siteId.message}</p>}
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label>Status</Label>
+                <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                    <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex gap-4"
+                    >
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="Draft" id="s-draft" /><Label htmlFor="s-draft">Draft</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="Sent" id="s-sent" /><Label htmlFor="s-sent">Sent</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="Approved" id="s-approved" /><Label htmlFor="s-approved">Approved</Label></div>
+                        <div className="flex items-center space-x-2"><RadioGroupItem value="Rejected" id="s-rejected" /><Label htmlFor="s-rejected">Rejected</Label></div>
+                    </RadioGroup>
+                    )}
+              />
+            </div>
+
+            <div className="space-y-4">
+              <Label className="text-lg font-medium">Items</Label>
+              <div className="space-y-4">
+                {fields.map((field, index) => (
+                  <div key={field.id} className="grid grid-cols-[1fr_100px_100px_100px_auto] gap-2 items-start p-2 border rounded-md">
+                    <div className="space-y-1">
+                        <Label htmlFor={`items.${index}.description`} className="text-xs">Description</Label>
+                        <Textarea
+                            id={`items.${index}.description`}
+                            placeholder="Item description"
+                            {...register(`items.${index}.description`)}
+                            className="min-h-[40px]"
+                        />
+                         {errors.items?.[index]?.description && <p className="text-xs text-red-500">{errors.items?.[index]?.description?.message}</p>}
+                    </div>
+                    <div className="space-y-1">
+                        <Label htmlFor={`items.${index}.quantity`} className="text-xs">Quantity</Label>
+                        <Input
+                            id={`items.${index}.quantity`}
+                            type="number"
+                            placeholder="0"
+                            {...register(`items.${index}.quantity`, { valueAsNumber: true })}
+                        />
+                         {errors.items?.[index]?.quantity && <p className="text-xs text-red-500">{errors.items?.[index]?.quantity?.message}</p>}
+                    </div>
+                    <div className="space-y-1">
+                        <Label htmlFor={`items.${index}.rate`} className="text-xs">Rate</Label>
+                        <Input
+                            id={`items.${index}.rate`}
+                            type="number"
+                            placeholder="0.00"
+                            {...register(`items.${index}.rate`, { valueAsNumber: true })}
+                        />
+                         {errors.items?.[index]?.rate && <p className="text-xs text-red-500">{errors.items?.[index]?.rate?.message}</p>}
+                    </div>
+                    <div className="space-y-1">
+                         <Label className="text-xs">Amount</Label>
+                         <p className="h-10 flex items-center justify-end px-3 font-medium">
+                            {(((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.rate || 0))).toFixed(2)}
+                         </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => remove(index)}
+                      className="self-center text-destructive hover:text-destructive mt-5"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => append({ description: '', quantity: 1, rate: 0, amount: 0, id: `new-${fields.length}` })}
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
+            </div>
+            
+            <div className="flex justify-end items-center gap-4 mt-4 p-4 bg-muted rounded-md">
+                <span className="font-semibold text-lg">Total Amount:</span>
+                <span className="font-bold text-xl text-primary">₹{totalAmount.toFixed(2)}</span>
+            </div>
+
+          </div>
+          <DialogFooter>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Saving...' : 'Save changes'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

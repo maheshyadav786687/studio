@@ -30,24 +30,6 @@ export const ProjectUpdateSchema = z.object({
 });
 export type ProjectUpdate = z.infer<typeof ProjectUpdateSchema>;
 
-export const QuotationItemSchema = z.object({
-  id: z.string(),
-  description: z.string(),
-  quantity: z.number(),
-  rate: z.number(),
-  amount: z.number(),
-});
-export type QuotationItem = z.infer<typeof QuotationItemSchema>;
-
-export const QuotationSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  status: z.enum(['Draft', 'Sent', 'Approved', 'Rejected']),
-  siteId: z.string(),
-  items: z.array(QuotationItemSchema),
-});
-export type Quotation = z.infer<typeof QuotationSchema>;
-
 export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),

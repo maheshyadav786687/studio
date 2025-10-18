@@ -2,7 +2,8 @@
 import { z } from 'zod';
 // We have to import the schemas this way to avoid circular dependencies.
 // We can't use a barrel file (index.ts) in this case.
-import { ProjectSchema, QuotationSchema } from './project.types';
+import { ProjectSchema } from './project.types';
+import { QuotationSchema } from './quotation.types';
 import { ClientSchema } from './client.types';
 
 

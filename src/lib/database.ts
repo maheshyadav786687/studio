@@ -5,9 +5,10 @@
 // This layer is responsible for all communication with the database.
 
 import { getDb } from './db-provider';
-import type { Project, Client, Site, SiteFormData } from './types';
+import type { Project, Client, Site, SiteFormData, Quotation } from './types';
 import type { ClientCreateDto, ClientUpdateDto } from './bll/client-bll';
 import type { SiteCreateDto, SiteUpdateDto } from './bll/site-bll';
+import type { QuotationCreateDto, QuotationUpdateDto } from './bll/quotation-bll';
 
 
 // --- Project Functions ---
@@ -258,6 +259,80 @@ export async function deleteSite(id: string): Promise<void> {
     const db = await getDb();
     await db.run('DELETE FROM Sites WHERE id = ?', id);
 }
+
+// --- Quotation Functions ---
+
+export async function findManyQuotations(): Promise<Quotation[]> {
+    const db = await getDb();
+    const query = `
+        SELECT 
+            q.*,
+            s.name as siteName,
+            c.name as clientName
+        FROM Quotations q
+        JOIN Sites s ON q.siteId = s.id
+        JOIN Clients c ON s.clientId = c.id;
+    `;
+    const results = await db.all(query);
+    return results.map(row => ({
+        ...row,
+        items: JSON.parse(row.items || '[]')
+    }));
+}
+
+export async function findQuotationById(id: string): Promise<Quotation | undefined> {
+    const db = await getDb();
+    const query = `
+        SELECT 
+            q.*,
+            s.name as siteName,
+            c.name as clientName
+        FROM Quotations q
+        JOIN Sites s ON q.siteId = s.id
+        JOIN Clients c ON s.clientId = c.id
+        WHERE q.id = ?;
+    `;
+    const row = await db.get(query, id);
+    if (!row) return undefined;
+    return {
+        ...row,
+        items: JSON.parse(row.items || '[]')
+    };
+}
+
+export async function createQuotation(quotationData: QuotationCreateDto): Promise<Quotation> {
+    const db = await getDb();
+    const id = `quote-${Date.now()}`;
+    const itemsJson = JSON.stringify(quotationData.items || []);
+    const query = `
+        INSERT INTO Quotations (id, title, status, siteId, items)
+        VALUES (?, ?, ?, ?, ?);
+    `;
+    await db.run(query, id, quotationData.title, quotationData.status, quotationData.siteId, itemsJson);
+    const newQuotation = await findQuotationById(id);
+    return newQuotation!;
+}
+
+export async function updateQuotation(id: string, quotationData: QuotationUpdateDto): Promise<Quotation | undefined> {
+    const db = await getDb();
+    const itemsJson = quotationData.items ? JSON.stringify(quotationData.items) : undefined;
+    const query = `
+        UPDATE Quotations
+        SET title = COALESCE(?, title),
+            status = COALESCE(?, status),
+            siteId = COALESCE(?, siteId),
+            items = COALESCE(?, items)
+        WHERE id = ?;
+    `;
+    await db.run(query, quotationData.title, quotationData.status, quotationData.siteId, itemsJson, id);
+    return await findQuotationById(id);
+}
+
+export async function deleteQuotation(id: string): Promise<void> {
+    const db = await getDb();
+    await db.run('DELETE FROM Quotations WHERE id = ?', id);
+}
+
 
 // --- DB Initialization ---
 

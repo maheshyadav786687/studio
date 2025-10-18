@@ -52,7 +52,7 @@ const navItems = [
     subItems: [
       { href: "/admin/clients", icon: Users, label: "Clients" },
       { href: "/admin/sites", icon: Building2, label: "Sites" },
-      { href: "#", icon: FileText, label: "Quotes" },
+      { href: "/admin/quotations", icon: FileText, label: "Quotes" },
       { href: "#", icon: ClipboardList, label: "Work Orders" },
     ],
   },
@@ -157,10 +157,10 @@ export function AppSidebarNav() {
     setIsClient(true);
   }, []);
 
-  const activeParent = navItems.find(
+  const activeParent = isClient ? navItems.find(
     item =>
       item.subItems?.some(sub => sub.href && sub.href !== '#' && pathname.startsWith(sub.href))
-  );
+  ) : null;
 
   return (
     <div className="flex h-full max-h-screen flex-col gap-2 bg-sidebar text-sidebar-foreground">
@@ -204,14 +204,16 @@ export function AppSidebarNav() {
                      </AccordionContent>
                    </AccordionItem>
                  ) : (
-                   <NavLink key={item.label} item={item} pathname={pathname} />
+                   <div key={item.label} className="px-2 lg:px-4">
+                    <NavLink item={item} pathname={pathname} />
+                   </div>
                  )
              ))}
            </Accordion>
         ) : (
             <div className="w-full px-2 lg:px-4 space-y-1 py-2">
                 {navItems.map(item => (
-                    <div key={item.label} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground">
+                     <div key={item.label} className="flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground">
                          <item.icon className="h-4 w-4" />
                         <span>{item.label}</span>
                     </div>
