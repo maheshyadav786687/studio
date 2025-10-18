@@ -168,7 +168,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                                         <SelectGroup key={group.clientName}>
                                             <SelectLabel>{group.clientName}</SelectLabel>
                                             {group.sites.map((s) => (
-                                                <SelectItem key={s.id} value={s.id} className="pl-8">
+                                                <SelectItem key={s.id} value={s.id}>
                                                     {s.name}
                                                 </SelectItem>
                                             ))}
