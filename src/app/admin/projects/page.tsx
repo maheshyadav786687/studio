@@ -1,13 +1,29 @@
+
 import { PlusCircle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/projects/project-card"
-import { db } from "@/lib/database"
 import type { Project } from "@/lib/types";
 
+async function getProjects(): Promise<Project[]> {
+  // In a real app, you'd fetch from your absolute URL
+  // For this demo, we can call the DB directly as a shortcut in server components,
+  // but we'll fetch from the API to demonstrate clear layer separation.
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/projects`, { cache: 'no-store' });
+    if (!res.ok) {
+      throw new Error('Failed to fetch projects');
+    }
+    return res.json();
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    return []; // Return empty array on error
+  }
+}
+
+
 export default async function ProjectsPage() {
-  // BLL/Application layer fetching data via the DAL
-  const projects: Project[] = await db.projects.findMany();
+  const projects: Project[] = await getProjects();
 
   return (
     <div className="flex flex-col gap-8">
