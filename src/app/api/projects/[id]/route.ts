@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+import { getProjectById } from '@/lib/bll/project-bll';
 
 export async function GET(
   req: Request,
@@ -10,7 +10,7 @@ export async function GET(
       return new NextResponse('Project ID is required', { status: 400 });
     }
 
-    const project = await db.projects.findById(params.id);
+    const project = await getProjectById(params.id);
 
     if (!project) {
       return new NextResponse('Project not found', { status: 404 });

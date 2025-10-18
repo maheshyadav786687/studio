@@ -1,7 +1,6 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getProjects } from '@/lib/services/project-api-service';
-import { ProjectUpdate } from '@/lib/types';
+import { getProjects } from '@/lib/bll/project-bll';
 
 
 async function getRecentUpdates() {

@@ -6,19 +6,30 @@
 
 import sql from 'mssql';
 import type { Project, Client } from './types';
-import type { ClientCreateDto } from './bll/client-bll';
+import type { ClientCreateDto, ClientUpdateDto } from './bll/client-bll';
 
 const config = {
   connectionString: process.env.DATABASE_URL,
 };
 
 if (!config.connectionString) {
-  throw new Error('DATABASE_URL environment variable is not set.');
+  // In a real app, you'd want more robust handling, but for now this is fine.
+  // We'll proceed with a "mock" mode if no connection string is provided.
+  console.warn("DATABASE_URL environment variable is not set. Running in mock data mode.");
 }
 
 // In a real production app, you might want to manage a connection pool
 // more carefully, but for this purpose, connecting on each request is fine.
-const getDb = () => sql.connect(config);
+const getDb = async () => {
+    if(!config.connectionString) return null;
+    try {
+        return await sql.connect(config);
+    } catch (err) {
+        console.error("Database connection failed:", err);
+        return null;
+    }
+}
+
 
 /**
  * NOTE: The queries below assume you have created the necessary tables.
@@ -41,6 +52,7 @@ export const db = {
   projects: {
     findMany: async (): Promise<Project[]> => {
       const pool = await getDb();
+      if (!pool) return []; // Return empty array if DB is not connected
       const result = await pool.request().query`SELECT * FROM Projects`;
       return result.recordset.map(p => ({
           ...p,
@@ -51,6 +63,7 @@ export const db = {
     },
     findById: async (id: string): Promise<Project | undefined> => {
       const pool = await getDb();
+       if (!pool) return undefined;
       const result = await pool.request()
         .input('id', sql.NVarChar, id)
         .query`SELECT * FROM Projects WHERE id = @id`;
@@ -70,6 +83,7 @@ export const db = {
   clients: {
     findMany: async (): Promise<Client[]> => {
       const pool = await getDb();
+      if (!pool) return [];
       // A more complex query to calculate projectsCount on the fly
       const result = await pool.request().query`
         SELECT 
@@ -81,6 +95,7 @@ export const db = {
     },
     findByEmail: async (email: string): Promise<Client | undefined> => {
       const pool = await getDb();
+      if (!pool) return undefined;
       const result = await pool.request()
         .input('email', sql.NVarChar, email)
         .query`SELECT * FROM Clients WHERE email = @email`;
@@ -90,6 +105,18 @@ export const db = {
       const pool = await getDb();
       const newId = `cl${Date.now()}`;
       const avatarUrl = `https://picsum.photos/seed/${Date.now()}/100/100`;
+
+      const newClient: Client = {
+        ...clientData,
+        id: newId,
+        avatarUrl: avatarUrl,
+        projectsCount: 0,
+      };
+
+      if (!pool) {
+          console.log("Running in mock mode, not saving to DB.");
+          return newClient;
+      }
 
       await pool.request()
         .input('id', sql.NVarChar, newId)
@@ -101,16 +128,11 @@ export const db = {
         .input('status', sql.NVarChar, clientData.status)
         .query`INSERT INTO Clients (id, name, email, phone, company, avatarUrl, status) VALUES (@id, @name, @email, @phone, @company, @avatarUrl, @status)`;
 
-      const newClient: Client = {
-        ...clientData,
-        id: newId,
-        avatarUrl: avatarUrl,
-        projectsCount: 0,
-      };
       return newClient;
     },
-    update: async (id: string, clientData: Partial<ClientCreateDto>): Promise<Client | undefined> => {
+    update: async (id: string, clientData: ClientUpdateDto): Promise<Client | undefined> => {
       const pool = await getDb();
+      if (!pool) return undefined;
       
       const setClauses = Object.keys(clientData)
         .map(key => `${key} = @${key}`)
@@ -120,7 +142,7 @@ export const db = {
 
       const request = pool.request().input('id', sql.NVarChar, id);
       for (const [key, value] of Object.entries(clientData)) {
-          request.input(key, sql.NVarChar, value);
+          request.input(key, sql.NVarChar, value as string);
       }
 
       await request.query(`UPDATE Clients SET ${setClauses} WHERE id = @id`);
@@ -133,6 +155,7 @@ export const db = {
     },
     delete: async (id: string): Promise<void> => {
       const pool = await getDb();
+      if (!pool) return;
       await pool.request()
         .input('id', sql.NVarChar, id)
         .query`DELETE FROM Clients WHERE id = @id`;

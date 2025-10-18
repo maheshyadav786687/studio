@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { getProjects } from '@/lib/services/project-api-service';
+import { getProjects } from '@/lib/bll/project-bll';
 import { Project } from '@/lib/types';
 import { useEffect, useState } from 'react';
 
@@ -22,7 +22,7 @@ export function ProjectsOverviewChart() {
 
         projects.forEach(project => {
             if (project.status in counts) {
-                counts[project.status]++;
+                counts[project.status as keyof typeof counts]++;
             }
         });
         

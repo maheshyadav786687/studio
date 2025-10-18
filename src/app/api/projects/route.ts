@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/database';
+import { getProjects } from '@/lib/bll/project-bll';
 
 export async function GET() {
   try {
-    const projects = await db.projects.findMany();
+    const projects = await getProjects();
     return NextResponse.json(projects);
   } catch (error) {
     console.error('[API_PROJECTS_GET]', error);
