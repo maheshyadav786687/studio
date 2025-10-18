@@ -2,7 +2,9 @@
 import { ClientsTable } from "@/components/clients/clients-table";
 import type { Client } from "@/lib/types";
 import { getClients as fetchClientsFromBll } from "@/lib/bll/client-bll";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlusCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ClientDialog } from "@/components/clients/client-dialog";
 
 async function getClients(): Promise<Client[]> {
   try {
@@ -24,12 +26,20 @@ export default async function ClientsPage() {
           <h1 className="font-headline text-4xl font-bold tracking-tight">Clients</h1>
           <p className="text-muted-foreground">Manage your client accounts and view their information.</p>
         </div>
+        <div className="ml-auto flex items-center gap-2">
+            <ClientDialog>
+                <Button size="sm" className="h-8 gap-1">
+                    <PlusCircle className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                    Add Client
+                    </span>
+                </Button>
+            </ClientDialog>
+        </div>
       </div>
-      <Card>
-        <CardContent className="p-6">
-          <ClientsTable clients={clients} />
-        </CardContent>
-      </Card>
+      
+      <ClientsTable clients={clients} />
+
     </div>
   );
 }
