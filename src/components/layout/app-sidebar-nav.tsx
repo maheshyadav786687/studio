@@ -48,7 +48,7 @@ const navItems = [
     label: "Clients",
     icon: Users,
     subItems: [
-      { href: "#", icon: Users, label: "Clients" },
+      { href: "/admin/clients", icon: Users, label: "Clients" },
       { href: "#", icon: Building2, label: "Sites" },
       { href: "#", icon: FileText, label: "Quotes" },
       { href: "#", icon: ClipboardList, label: "Work Orders" },
