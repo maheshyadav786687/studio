@@ -2,11 +2,17 @@ import { StatsCards } from '@/components/dashboard/stats-cards';
 import { ProjectsOverviewChart } from '@/components/dashboard/projects-overview-chart';
 import { RecentUpdates } from '@/components/dashboard/recent-updates';
 import { getProjects } from '@/lib/bll/project-bll';
-import type { Project } from '@/lib/types';
+import type { Project, Status } from '@/lib/types';
 
 async function getProjectStatusData() {
   try {
     const projects: Project[] = await getProjects();
+    const statuses: Status[] = [
+      { Id: '1', Name: 'In Progress' },
+      { Id: '2', Name: 'Completed' },
+      { Id: '3', Name: 'Not Started' },
+      { Id: '4', Name: 'Delayed' },
+    ];
     const counts = {
       'In Progress': 0,
       'Completed': 0,
@@ -15,8 +21,9 @@ async function getProjectStatusData() {
     };
 
     projects.forEach(project => {
-      if (project.status in counts) {
-        counts[project.status as keyof typeof counts]++;
+      const status = statuses.find(s => s.Id === project.StatusId);
+      if (status && status.Name in counts) {
+        counts[status.Name as keyof typeof counts]++;
       }
     });
     

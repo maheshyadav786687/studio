@@ -29,21 +29,22 @@ function SubmitButton() {
 }
 
 export function ProgressUpdates({ project }: ProgressUpdatesProps) {
-    const [updates, setUpdates] = useState<ProjectUpdate[]>(project.updates);
+    const [updates, setUpdates] = useState<ProjectUpdate[]>(project.updates || []);
     const formRef = useRef<HTMLFormElement>(null);
 
-    const initialState = { message: null, summary: null, errors: {}, originalContent: null };
+    const initialState = { message: '', summary: null, errors: {}, originalContent: undefined };
     const [state, formAction] = useFormState(generateSummaryAction, initialState);
 
     useEffect(() => {
         if (state.message === 'Summary generated successfully.' && state.summary && state.originalContent) {
             const newUpdate: ProjectUpdate = {
-                id: `update-${Date.now()}`,
-                date: new Date().toISOString(),
-                content: state.originalContent,
-                summary: state.summary,
-                author: "Anjali Sharma", // Hardcoded for demo
-                authorAvatar: "https://picsum.photos/seed/avatar1/100/100",
+                Id: `update-${Date.now()}`,
+                ProjectId: project.Id,
+                CompanyId: project.CompanyId,
+                CreatedOn: new Date().toISOString(),
+                UpdateContent: state.originalContent,
+                Summary: state.summary,
+                CreatedBy: "Anjali Sharma", // Hardcoded for demo
             };
             setUpdates(prev => [newUpdate, ...prev]);
             formRef.current?.reset();
@@ -59,7 +60,7 @@ export function ProgressUpdates({ project }: ProgressUpdatesProps) {
             </CardHeader>
             <CardContent>
                 <form ref={formRef} action={formAction} className="space-y-4">
-                    <input type="hidden" name="projectId" value={project.id} />
+                    <input type="hidden" name="projectId" value={project.Id} />
                     <Textarea
                         name="updateText"
                         placeholder="Provide a detailed update on your progress, challenges, and next steps..."
@@ -87,22 +88,21 @@ export function ProgressUpdates({ project }: ProgressUpdatesProps) {
                 <div className="mt-6 space-y-6">
                     <h3 className="text-md font-semibold text-muted-foreground">Update History</h3>
                     {updates.map(update => (
-                        <div key={update.id} className="flex items-start gap-4 border-b pb-4 last:border-b-0">
+                        <div key={update.Id} className="flex items-start gap-4 border-b pb-4 last:border-b-0">
                             <Avatar className="h-9 w-9 border">
-                                <AvatarImage src={update.authorAvatar} alt={update.author} data-ai-hint="person portrait" />
-                                <AvatarFallback>{update.author.charAt(0)}</AvatarFallback>
+                                <AvatarFallback>{update.CreatedBy.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <div className="grid gap-2 flex-1">
                                 <div className="flex items-center justify-between">
-                                    <p className="text-sm font-medium leading-none">{update.author}</p>
-                                    <p className="text-xs text-muted-foreground">{format(new Date(update.date), "MMM d, yyyy")}</p>
+                                    <p className="text-sm font-medium leading-none">{update.CreatedBy}</p>
+                                    <p className="text-xs text-muted-foreground">{format(new Date(update.CreatedOn), "MMM d, yyyy")}</p>
                                 </div>
-                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{update.content}</p>
-                                {update.summary && (
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{update.UpdateContent}</p>
+                                {update.Summary && (
                                      <Alert variant="default" className="mt-2 bg-muted/50">
                                         <Sparkles className="h-4 w-4 text-primary" />
                                         <AlertTitle className="text-sm font-semibold">AI Summary</AlertTitle>
-                                        <AlertDescription className="text-xs">{update.summary}</AlertDescription>
+                                        <AlertDescription className="text-xs">{update.Summary}</AlertDescription>
                                     </Alert>
                                 )}
                             </div>

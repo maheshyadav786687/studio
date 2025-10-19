@@ -1,27 +1,20 @@
-
 'use client';
+
 import * as React from 'react';
+import { useRouter } from 'next/navigation';
+import { format, isValid, parseISO } from 'date-fns';
 import {
   ColumnDef,
+  ColumnFiltersState,
+  SortingState,
   flexRender,
   getCoreRowModel,
-  useReactTable,
-  getPaginationRowModel,
-  SortingState,
-  getSortedRowModel,
   getFilteredRowModel,
-  ColumnFiltersState,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable,
 } from '@tanstack/react-table';
-import { format } from 'date-fns';
-
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { MoreHorizontal, Pencil, Trash2, ArrowUpDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -32,192 +25,135 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, Pencil, Trash2, ArrowUpDown } from 'lucide-react';
-import { Card, CardContent } from "@/components/ui/card";
-
-import type { Quotation } from '@/lib/types';
-import { QuotationDialog } from './quotation-dialog';
-import { DeleteQuotationDialog } from './delete-quotation-dialog';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-  } from "@/components/ui/select"
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Quotation } from '@/lib/types';
+import { useQuotationDialog, QuotationDialog } from './quotation-dialog';
+import { DeleteQuotationDialogProvider, useDeleteQuotationDialog } from './delete-quotation-dialog';
 
-export const columns: ColumnDef<Quotation>[] = [
-  {
-    accessorKey: 'quotationNumber',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Number
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <div className="pl-4 font-medium">{row.getValue("quotationNumber")}</div>,
-  },
-  {
-    accessorKey: 'title',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Title
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => <div className="pl-4 font-medium">{row.getValue("title")}</div>,
-  },
-  {
-    accessorKey: 'quotationDate',
-    header: ({ column }) => {
-      return (
-        <Button
-          variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-        >
-          Date
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
-      );
-    },
-    cell: ({ row }) => {
-        const date = row.getValue("quotationDate") as string;
-        return <div className="pl-4">{format(new Date(date), 'dd MMM yyyy')}</div>
-    }
-  },
-  {
-    accessorKey: 'siteName',
-    header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Site
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        );
-      },
-      cell: ({ row }) => <div className="pl-4">{row.original.siteName}</div>,
-  },
-    {
-    accessorKey: 'clientName',
-    header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Client
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        );
-      },
-      cell: ({ row }) => <div className="pl-4">{row.original.clientName}</div>,
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => {
-      const status = row.getValue('status') as string;
-      const variant: "default" | "secondary" | "destructive" | "outline" = 
-        status === 'Approved' ? 'default' :
-        status === 'Rejected' ? 'destructive' :
-        status === 'Sent' ? 'secondary' : 'outline';
-      const className = status === 'Approved' ? 'bg-green-600' : '';
+function QuotationsTableComponent({ data }: { data: Quotation[] }) {
+  const router = useRouter();
+  const quotationDialog = useQuotationDialog();
+  const deleteQuotationDialog = useDeleteQuotationDialog();
 
-      return (
-        <Badge variant={variant} className={className}>
-          {status}
-        </Badge>
-      );
-    },
-  },
-  {
-    id: 'actions',
-    cell: ({ row }) => {
-      const quotation = row.original;
-      const [isEditDialogOpen, setIsEditDialogOpen] = React.useState(false);
-      const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
-
-      return (
-        <div className="text-right">
-            <QuotationDialog quotation={quotation} onOpenChange={setIsEditDialogOpen} open={isEditDialogOpen}>
-                 <span/>
-            </QuotationDialog>
-            <DeleteQuotationDialog quotation={quotation} onOpenChange={setIsDeleteDialogOpen} open={isDeleteDialogOpen}>
-                <span/>
-            </DeleteQuotationDialog>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
-                <Pencil className="mr-2 h-4 w-4" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)} className="text-destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      );
-    },
-  },
-];
-
-export function QuotationsTable({ quotations }: { quotations: Quotation[] }) {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
-  
+
+  const columns: ColumnDef<Quotation>[] = [
+    {
+        accessorKey: 'Client.Name',
+        header: ({ column }) => (
+            <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+                Client
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+        ),
+        cell: ({ row }) => {
+            const clientName = row.original.Client?.Name ?? '';
+            return (
+                <div className="flex items-center gap-3 pl-4">
+                    <Avatar>
+                        <AvatarFallback>{clientName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="font-medium">{clientName}</div>
+                </div>
+            );
+        },
+    },
+    {
+        accessorKey: 'Site.Name',
+        header: 'Site',
+        cell: ({ row }) => <div className="capitalize">{row.original.Site?.Name}</div>,
+    },
+    {
+        accessorKey: 'Amount',
+        header: ({ column }) => (
+            <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+                Amount
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+        ),
+        cell: ({ row }) => <div className="capitalize">{row.getValue('Amount')}</div>,
+    },
+    {
+        accessorKey: 'CreatedOn',
+        header: 'Quotation Date',
+        cell: ({ row }) => {
+            const dateValue = row.getValue("CreatedOn");
+            const date = typeof dateValue === 'string' ? parseISO(dateValue) : dateValue as Date;
+            return <div>{isValid(date) ? format(date, 'dd MMM yyyy') : 'Invalid Date'}</div>
+        }
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const quotation = row.original;
+        return (
+            <div className="text-right">
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => quotationDialog.show({ quotationId: quotation.Id })}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => deleteQuotationDialog.show({ quotationId: quotation.Id, onConfirm: () => router.refresh() })} className="text-destructive">
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                    </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        );
+      },
+    },
+  ];
+
   const table = useReactTable({
-    data: quotations,
+    data,
     columns,
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     state: {
       sorting,
       columnFilters,
     },
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      }
-    }
   });
 
   return (
     <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between py-4">
+      <CardContent className="p-0">
+        <div className="flex items-center justify-between p-6">
           <Input
-            placeholder="Filter quotations by title..."
-            value={(table.getColumn('title')?.getFilterValue() as string) ?? ''}
+            placeholder="Filter by client..."
+            value={(table.getColumn('Client.Name')?.getFilterValue() as string) ?? ''}
             onChange={(event) =>
-              table.getColumn('title')?.setFilterValue(event.target.value)
+              table.getColumn('Client.Name')?.setFilterValue(event.target.value)
             }
             className="max-w-sm"
           />
@@ -286,9 +222,9 @@ export function QuotationsTable({ quotations }: { quotations: Quotation[] }) {
             </TableBody>
           </Table>
         </div>
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex items-center justify-between p-6">
           <div className="flex-1 text-sm text-muted-foreground">
-            {table.getFilteredRowModel().rows.length} row(s) found.
+            {table.getFilteredRowModel().rows.length} row(s) available.
           </div>
           <div className="flex items-center gap-4">
               <span className="flex items-center gap-1 text-sm">
@@ -344,4 +280,14 @@ export function QuotationsTable({ quotations }: { quotations: Quotation[] }) {
       </CardContent>
     </Card>
   );
+}
+
+export function QuotationsTable({ data }: { data: Quotation[] }) {
+    return (
+        <QuotationDialog>
+            <DeleteQuotationDialogProvider>
+                <QuotationsTableComponent data={data} />
+            </DeleteQuotationDialogProvider>
+        </QuotationDialog>
+    )
 }

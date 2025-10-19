@@ -5,29 +5,19 @@ import { TaskList } from '@/components/projects/task-list';
 import { ProgressUpdates } from '@/components/projects/progress-updates';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import type { Project } from '@/lib/types';
-import { getProjectById } from '@/lib/services/project-api-service';
-
-async function getProject(id: string): Promise<Project | null> {
-    try {
-        // UIL calls the Frontend API Service
-        return await getProjectById(id);
-    } catch (error) {
-        console.error("Error fetching project:", error);
-        return null;
-    }
-}
+import type { Project, Task } from '@/lib/types';
+import { getProjectById } from '@/lib/bll/project-bll';
 
 
 export default async function ProjectDetailPage({ params }: { params: { id: string } }) {
-    const project = await getProject(params.id);
+    const project = await getProjectById(params.id);
 
     if (!project) {
         notFound();
     }
     
-    const tasksCompleted = project.tasks.filter(t => t.status === 'Done').length;
-    const totalTasks = project.tasks.length;
+    const tasksCompleted = project.tasks ? project.tasks.filter((t: Task) => t.StatusId === '2').length : 0;
+    const totalTasks = project.tasks ? project.tasks.length : 0;
     const progress = totalTasks > 0 ? (tasksCompleted / totalTasks) * 100 : 0;
 
     return (

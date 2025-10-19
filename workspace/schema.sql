@@ -1,65 +1,192 @@
--- Run these queries in your 'ContractorBabuDB' database to create the necessary tables.
 
--- Create the Clients table
+CREATE TABLE Statuses (
+    Id TEXT PRIMARY KEY,
+    Type TEXT NOT NULL,
+    Name TEXT NOT NULL,
+    Color TEXT,
+    IsActive INTEGER DEFAULT 1,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT
+);
+
+CREATE TABLE Roles (
+    Id TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    Permissions TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT
+);
+
+CREATE TABLE Plans (
+    Id TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    Price REAL NOT NULL,
+    ProjectsLimit INTEGER,
+    UsersLimit INTEGER,
+    Features TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT
+);
+
+CREATE TABLE Companies (
+    Id TEXT PRIMARY KEY,
+    Name TEXT NOT NULL,
+    GstNumber TEXT,
+    Address TEXT,
+    PlanId TEXT,
+    StatusId TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT,
+    FOREIGN KEY (PlanId) REFERENCES Plans(Id),
+    FOREIGN KEY (StatusId) REFERENCES Statuses(Id)
+);
+
+CREATE TABLE Users (
+    Id TEXT PRIMARY KEY,
+    CompanyId TEXT NOT NULL,
+    Name TEXT NOT NULL,
+    Email TEXT NOT NULL UNIQUE,
+    Password TEXT NOT NULL,
+    RoleId TEXT,
+    StatusId TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT,
+    FOREIGN KEY (CompanyId) REFERENCES Companies(Id),
+    FOREIGN KEY (RoleId) REFERENCES Roles(Id),
+    FOREIGN KEY (StatusId) REFERENCES Statuses(Id)
+);
+
+CREATE TABLE ActivityLogs (
+    Id TEXT PRIMARY KEY,
+    CompanyId TEXT NOT NULL,
+    UserId TEXT,
+    Module TEXT NOT NULL,
+    Action TEXT NOT NULL,
+    RecordId TEXT,
+    Changes TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT,
+    FOREIGN KEY (CompanyId) REFERENCES Companies(Id),
+    FOREIGN KEY (UserId) REFERENCES Users(Id)
+);
+
+CREATE TABLE Units (
+    Id TEXT PRIMARY KEY,
+    CompanyId TEXT NOT NULL,
+    Name TEXT NOT NULL,
+    ShortCode TEXT NOT NULL,
+    StatusId TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT,
+    FOREIGN KEY (CompanyId) REFERENCES Companies(Id),
+    FOREIGN KEY (StatusId) REFERENCES Statuses(Id)
+);
+
 CREATE TABLE Clients (
-  id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-  name NVARCHAR(255) NOT NULL,
-  email NVARCHAR(255) NOT NULL UNIQUE,
-  phone NVARCHAR(50),
-  company NVARCHAR(255),
-  avatarUrl NVARCHAR(MAX),
-  status NVARCHAR(20) CHECK (status IN ('Active', 'Inactive'))
+    Id TEXT PRIMARY KEY,
+    CompanyId TEXT NOT NULL,
+    Name TEXT NOT NULL,
+    ContactPerson TEXT,
+    Phone TEXT,
+    Email TEXT,
+    Address TEXT,
+    StatusId TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT,
+    FOREIGN KEY (CompanyId) REFERENCES Companies(Id),
+    FOREIGN KEY (StatusId) REFERENCES Statuses(Id)
 );
 
-
--- Create the Projects table
--- NOTE: For simplicity, 'tasks' and 'updates' are stored as JSON strings.
--- In a more complex production environment, these would likely be their own tables.
-CREATE TABLE Projects (
-    id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-    name NVARCHAR(255) NOT NULL,
-    description NVARCHAR(MAX),
-    startDate DATE,
-    deadline DATE,
-    cost FLOAT,
-    status NVARCHAR(50),
-    clientId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Clients(id),
-    imageUrl NVARCHAR(MAX),
-    tasks NVARCHAR(MAX) DEFAULT '[]',
-    updates NVARCHAR(MAX) DEFAULT '[]',
-    contractorIds NVARCHAR(MAX) DEFAULT '[]'
-);
-
-
--- Create the Sites table
 CREATE TABLE Sites (
-  id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-  name NVARCHAR(255) NOT NULL,
-  address NVARCHAR(MAX) NOT NULL,
-  clientId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Clients(id)
+    Id TEXT PRIMARY KEY,
+    CompanyId TEXT NOT NULL,
+    ClientId TEXT NOT NULL,
+    Name TEXT NOT NULL,
+    Location TEXT,
+    StatusId TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT,
+    FOREIGN KEY (CompanyId) REFERENCES Companies(Id),
+    FOREIGN KEY (ClientId) REFERENCES Clients(Id),
+    FOREIGN KEY (StatusId) REFERENCES Statuses(Id)
 );
 
+CREATE TABLE Projects (
+    Id TEXT PRIMARY KEY,
+    CompanyId TEXT NOT NULL,
+    ClientId TEXT,
+    SiteId TEXT,
+    Name TEXT NOT NULL,
+    Description TEXT,
+    StartDate TEXT,
+    EndDate TEXT,
+    StatusId TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT,
+    FOREIGN KEY (CompanyId) REFERENCES Companies(Id),
+    FOREIGN KEY (ClientId) REFERENCES Clients(Id),
+    FOREIGN KEY (SiteId) REFERENCES Sites(Id),
+    FOREIGN KEY (StatusId) REFERENCES Statuses(Id)
+);
 
--- Create the Quotations table
 CREATE TABLE Quotations (
-  id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-  quotationNumber NVARCHAR(255) NOT NULL,
-  quotationDate DATE NOT NULL,
-  title NVARCHAR(255) NOT NULL,
-  status NVARCHAR(50) CHECK (status IN ('Draft', 'Sent', 'Approved', 'Rejected')),
-  siteId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Sites(id)
+    Id TEXT PRIMARY KEY,
+    CompanyId TEXT NOT NULL,
+    ClientId TEXT NOT NULL,
+    SiteId TEXT,
+    ProjectId TEXT,
+    Amount REAL NOT NULL,
+    Description TEXT,
+    StatusId TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT,
+    FOREIGN KEY (CompanyId) REFERENCES Companies(Id),
+    FOREIGN KEY (ClientId) REFERENCES Clients(Id),
+    FOREIGN KEY (SiteId) REFERENCES Sites(Id),
+    FOREIGN KEY (ProjectId) REFERENCES Projects(Id),
+    FOREIGN KEY (StatusId) REFERENCES Statuses(Id)
 );
 
-
--- Create the QuotationItems table
 CREATE TABLE QuotationItems (
-  id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
-  quotationId UNIQUEIDENTIFIER FOREIGN KEY REFERENCES Quotations(id),
-  description NVARCHAR(MAX) NOT NULL,
-  quantity FLOAT NOT NULL,
-  unit NVARCHAR(50) NOT NULL,
-  rate FLOAT NOT NULL,
-  amount FLOAT NOT NULL,
-  area FLOAT,
-  material BIT NOT NULL
+    Id TEXT PRIMARY KEY,
+    CompanyId TEXT NOT NULL,
+    QuotationId TEXT NOT NULL,
+    Description TEXT NOT NULL,
+    IsWithMaterial INTEGER DEFAULT 0,
+    Quantity REAL NOT NULL DEFAULT 0,
+    UnitId TEXT,
+    Area REAL,
+    Rate REAL NOT NULL DEFAULT 0,
+    TotalAmount REAL,
+    StatusId TEXT,
+    CreatedBy TEXT,
+    CreatedOn TEXT DEFAULT CURRENT_TIMESTAMP,
+    ModifiedBy TEXT,
+    ModifiedOn TEXT,
+    FOREIGN KEY (CompanyId) REFERENCES Companies(Id),
+    FOREIGN KEY (QuotationId) REFERENCES Quotations(Id),
+    FOREIGN KEY (UnitId) REFERENCES Units(Id),
+    FOREIGN KEY (StatusId) REFERENCES Statuses(Id)
 );

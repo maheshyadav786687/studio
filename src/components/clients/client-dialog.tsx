@@ -3,9 +3,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -19,10 +18,9 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Client, ClientFormSchema } from '@/lib/types';
-import { createClient, updateClient } from '@/lib/services/client-api-service';
+import { Client, ClientFormData, ClientFormSchema } from '@/lib/types';
+import { createClient, updateClient } from '@/lib/bll/client-bll';
 
 type ClientDialogProps = {
   client?: Client;
@@ -30,9 +28,6 @@ type ClientDialogProps = {
   onOpenChange?: (open: boolean) => void;
   open?: boolean;
 };
-
-// DTO for the form
-type ClientFormData = z.infer<typeof ClientFormSchema>;
 
 export function ClientDialog({ client, children, onOpenChange, open: parentOpen }: ClientDialogProps) {
   const [open, setOpen] = useState(false);
@@ -44,21 +39,19 @@ export function ClientDialog({ client, children, onOpenChange, open: parentOpen 
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
-    control,
   } = useForm<ClientFormData>({
     resolver: zodResolver(ClientFormSchema),
     defaultValues: {
-      name: client?.name || '',
-      email: client?.email || '',
-      phone: client?.phone || '',
-      company: client?.company || '',
-      status: client?.status || 'Active',
+      Name: client?.Name || '',
+      Email: client?.Email || '',
+      Phone: client?.Phone || '',
+      Address: client?.Address || '',
     },
   });
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
-      reset(); // Reset form when dialog closes
+      reset();
     }
     setOpen(isOpen);
     if (onOpenChange) onOpenChange(isOpen);
@@ -67,10 +60,9 @@ export function ClientDialog({ client, children, onOpenChange, open: parentOpen 
   const currentOpen = parentOpen !== undefined ? parentOpen : open;
 
   async function onSubmit(data: ClientFormData) {
-    // UIL calls the Frontend API Service
     try {
       if (client) {
-        await updateClient(client.id, data);
+        await updateClient(client.Id, data);
       } else {
         await createClient(data);
       }
@@ -80,7 +72,7 @@ export function ClientDialog({ client, children, onOpenChange, open: parentOpen 
         description: `Client ${client ? 'updated' : 'saved'} successfully.`,
       });
 
-      router.refresh(); // Re-fetch data on the server and re-render
+      router.refresh();
       handleOpenChange(false);
 
     } catch (error: any) {
@@ -105,55 +97,24 @@ export function ClientDialog({ client, children, onOpenChange, open: parentOpen 
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input id="name" {...register('name')} className="col-span-3" />
-              {errors.name && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.name.message}</p>}
+              <Label htmlFor="Name" className="text-right">Name</Label>
+              <Input id="Name" {...register('Name')} className="col-span-3" />
+              {errors.Name && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.Name.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                Email
-              </Label>
-              <Input id="email" type="email" {...register('email')} className="col-span-3" />
-              {errors.email && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.email.message}</p>}
+              <Label htmlFor="Email" className="text-right">Email</Label>
+              <Input id="Email" type="email" {...register('Email')} className="col-span-3" />
+              {errors.Email && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.Email.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="phone" className="text-right">
-                Phone
-              </Label>
-              <Input id="phone" {...register('phone')} className="col-span-3" />
-              {errors.phone && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.phone.message}</p>}
+              <Label htmlFor="Phone" className="text-right">Phone</Label>
+              <Input id="Phone" {...register('Phone')} className="col-span-3" />
+              {errors.Phone && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.Phone.message}</p>}
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="company" className="text-right">
-                Company
-              </Label>
-              <Input id="company" {...register('company')} className="col-span-3" />
-              {errors.company && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.company.message}</p>}
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">Status</Label>
-               <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="col-span-3 flex gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Active" id="status-active" />
-                      <Label htmlFor="status-active">Active</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="Inactive" id="status-inactive" />
-                      <Label htmlFor="status-inactive">Inactive</Label>
-                    </div>
-                  </RadioGroup>
-                )}
-              />
+              <Label htmlFor="Address" className="text-right">Address</Label>
+              <Input id="Address" {...register('Address')} className="col-span-3" />
+              {errors.Address && <p className="col-span-4 text-xs text-red-500 text-right -mt-2">{errors.Address.message}</p>}
             </div>
           </div>
           <DialogFooter>

@@ -1,7 +1,7 @@
 // BLL (Business Logic Layer) for Projects
 'use server';
 
-import { findManyProjects, findProjectById } from '@/lib/database';
+import { findManyProjects, findProjectById } from '@/lib/dal/project-dal';
 import type { Project } from '@/lib/types';
 
 export async function getProjects(): Promise<Project[]> {

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, createContext, useContext, cloneElement } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,41 +18,95 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Quotation, QuotationFormSchema, Site, units } from '@/lib/types';
-import { createQuotation, updateQuotation } from '@/lib/services/quotation-api-service';
-import { getSitesGroupedByClient } from '@/lib/services/site-api-service';
+import { Quotation, QuotationFormSchema, Site, SiteGroup, Unit, QuotationFormData } from '@/lib/types';
+import { createQuotation, getQuotationById, getSitesGroupedByClient, updateQuotation } from '@/lib/bll/quotation-bll';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Trash2, PlusCircle } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useDialog, DialogState } from '@/hooks/use-dialog'; // Import the new hook
 
-type SiteGroup = {
-    clientName: string;
-    sites: { id: string; name: string }[];
-};
+// Create a context for the quotation dialog
+const QuotationDialogContext = createContext<ReturnType<typeof useDialog<{ quotationId?: string }>> | null>(null);
 
-type QuotationDialogProps = {
-  quotation?: Quotation;
-  children: React.ReactNode;
-  onOpenChange?: (open: boolean) => void;
-  open?: boolean;
-};
+export function useQuotationDialog() {
+  const context = useContext(QuotationDialogContext);
+  if (!context) {
+    throw new Error('useQuotationDialog must be used within a QuotationDialog');
+  }
+  return context;
+}
 
-type QuotationFormData = z.infer<typeof QuotationFormSchema>;
+export function QuotationDialog({ children }: { children: React.ReactNode }) {
+    const dialog = useDialog<{ quotationId?: string }>();
+    return (
+        <QuotationDialogContext.Provider value={dialog}>
+            {children}
+            <QuotationDialogContent />
+        </QuotationDialogContext.Provider>
+    )
+}
 
-export function QuotationDialog({ quotation, children, onOpenChange, open: parentOpen }: QuotationDialogProps) {
-  const [open, setOpen] = useState(false);
+export function AddQuotationButton() {
+    const { show } = useQuotationDialog();
+    return (
+        <Button size="sm" className="h-8 gap-1" onClick={() => show({})}>
+            <PlusCircle className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+            Add Quotation
+            </span>
+        </Button>
+    );
+}
+
+function QuotationDialogContent() {
+  const { visible, hide, quotationId } = useQuotationDialog();
+  const [quotation, setQuotation] = useState<Quotation | undefined>();
   const [siteGroups, setSiteGroups] = useState<SiteGroup[]>([]);
+  const [units, setUnits] = useState<Unit[]>([]);
   const { toast } = useToast();
   const router = useRouter();
+
+  useEffect(() => {
+    async function fetchQuotation() {
+      if (quotationId) {
+        const fetchedQuotation = await getQuotationById(quotationId);
+        setQuotation(fetchedQuotation);
+      }
+    }
+
+    if (visible) {
+        fetchQuotation();
+    }
+  }, [visible, quotationId]);
+
+  const defaultValues = quotation
+    ? {
+        ...quotation,
+        Description: quotation.Description || '',
+        SiteId: quotation.SiteId || '',
+        items: (quotation.items || []).map(item => ({
+            ...item,
+            Description: item.Description || '',
+            UnitId: item.UnitId || null,
+            Quantity: item.Quantity || null,
+            Rate: item.Rate || null,
+            Area: item.Area || null,
+            IsWithMaterial: item.IsWithMaterial || false,
+        })),
+      }
+    : {
+        Description: '',
+        SiteId: '',
+        items: [],
+      };
 
   const {
     register,
@@ -63,23 +117,13 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
     watch,
   } = useForm<QuotationFormData>({
     resolver: zodResolver(QuotationFormSchema),
-    defaultValues: quotation ? 
-    { ...quotation, items: quotation.items || [], quotationDate: new Date(quotation.quotationDate) } :
-    {
-      title: '',
-      siteId: '',
-      status: 'Draft',
-      items: [],
-      quotationDate: new Date(),
-    },
+    defaultValues
   });
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'items',
   });
-
-  const currentOpen = parentOpen !== undefined ? parentOpen : open;
 
   useEffect(() => {
     async function fetchSites() {
@@ -90,23 +134,40 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
         console.error('Failed to fetch sites', error);
       }
     }
-    if (currentOpen) {
+    async function fetchUnits() {
+        try {
+          const response = await fetch('/api/units');
+          if (!response.ok) {
+            throw new Error('Failed to fetch units');
+          }
+          const fetchedUnits = await response.json();
+          setUnits(fetchedUnits);
+        } catch (error) {
+          console.error('Failed to fetch units', error);
+        }
+      }
+    if (visible) {
       fetchSites();
+      fetchUnits();
+      if(quotationId && quotation) {
+          reset(defaultValues)
+      } else {
+          reset()
+      }
     }
-  }, [currentOpen]);
+  }, [visible, quotationId, quotation, reset, defaultValues]);
   
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       reset();
+      hide();
     }
-    setOpen(isOpen);
-    if (onOpenChange) onOpenChange(isOpen);
   };
   
   async function onSubmit(data: QuotationFormData) {
     try {
       if (quotation) {
-        await updateQuotation(quotation.id, data);
+        await updateQuotation(quotation.Id, data);
       } else {
         await createQuotation(data);
       }
@@ -129,22 +190,21 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
   }
 
   const watchedItems = watch('items');
-  const totalAmount = watchedItems.reduce((acc, item) => {
-      const quantity = item.quantity || 0;
-      const rate = item.rate || 0;
-      const area = item.area || 0;
+  const totalAmount = watchedItems ? watchedItems.reduce((acc: number, item: any) => {
+      const quantity = item.Quantity || 0;
+      const rate = item.Rate || 0;
+      const area = item.Area || 0;
       const itemAmount = area > 0 ? quantity * rate * area : quantity * rate;
       return acc + itemAmount;
-  }, 0);
+  }, 0) : 0;
 
 
   return (
-    <Dialog open={currentOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={visible} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-7xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>{quotation ? `Edit Quotation - ${quotation.quotationNumber}` : 'Add New Quotation'}</DialogTitle>
+            <DialogTitle>{quotation ? `Edit Quotation - ${quotation.Description}` : 'Add New Quotation'}</DialogTitle>
             <DialogDescription>
               {quotation ? 'Update the details for this quotation.' : 'Enter the details for the new quotation.'}
             </DialogDescription>
@@ -152,17 +212,17 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
           <div className="grid gap-6 py-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Input id="title" {...register('title')} />
-                    {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
+                    <Label htmlFor="Description">Title</Label>
+                    <Input id="Description" {...register('Description')} />
+                    {errors.Description && <p className="text-xs text-red-500">{errors.Description.message}</p>}
                 </div>
                  <div className="space-y-2">
-                    <Label htmlFor="siteId">Site</Label>
+                    <Label htmlFor="SiteId">Site</Label>
                     <Controller
                         control={control}
-                        name="siteId"
+                        name="SiteId"
                         render={({ field }) => (
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select onValueChange={field.onChange} defaultValue={field.value as string}>
                                 <SelectTrigger>
                                 <SelectValue placeholder="Select a site" />
                                 </SelectTrigger>
@@ -181,117 +241,65 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                             </Select>
                         )}
                     />
-                    {errors.siteId && <p className="text-xs text-red-500">{errors.siteId.message}</p>}
+                    {errors.SiteId && <p className="text-xs text-red-500">{errors.SiteId.message}</p>}
                 </div>
-                 <div className="space-y-2">
-                    <Label htmlFor="quotationDate">Quotation Date</Label>
-                     <Controller
-                        name="quotationDate"
-                        control={control}
-                        render={({ field }) => (
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                    "w-full justify-start text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                    {field.value ? format(new Date(field.value), "PPP") : <span>Pick a date</span>}
-                                </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value ? new Date(field.value) : undefined}
-                                        onSelect={field.onChange}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        )}
-                    />
-                    {errors.quotationDate && <p className="text-xs text-red-500">{errors.quotationDate.message}</p>}
-                </div>
-            </div>
-
-            <div className="space-y-2">
-                <Label>Status</Label>
-                <Controller
-                    name="status"
-                    control={control}
-                    render={({ field }) => (
-                    <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex gap-4"
-                    >
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="Draft" id="s-draft" /><Label htmlFor="s-draft">Draft</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="Sent" id="s-sent" /><Label htmlFor="s-sent">Sent</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="Approved" id="s-approved" /><Label htmlFor="s-approved">Approved</Label></div>
-                        <div className="flex items-center space-x-2"><RadioGroupItem value="Rejected" id="s-rejected" /><Label htmlFor="s-rejected">Rejected</Label></div>
-                    </RadioGroup>
-                    )}
-              />
             </div>
 
             <div className="space-y-4">
               <Label className="text-lg font-medium">Items</Label>
               <div className="space-y-4">
                 {fields.map((field, index) => {
-                  const item = watchedItems[index];
-                  const quantity = item?.quantity || 0;
-                  const rate = item?.rate || 0;
-                  const area = item?.area || 0;
+                  const item = watchedItems?.[index];
+                  const quantity = item?.Quantity || 0;
+                  const rate = item?.Rate || 0;
+                  const area = item?.Area || 0;
                   const amount = area > 0 ? quantity * rate * area : quantity * rate;
 
                   return (
                   <div key={field.id} className="grid grid-cols-[2fr_0.8fr_1fr_1.2fr_1fr_0.5fr_1fr_auto] gap-4 items-center p-2 border rounded-md">
                     <div className="space-y-1 self-start">
-                        <Label htmlFor={`items.${index}.description`} className="text-xs">Description</Label>
+                        <Label htmlFor={`items.${index}.Description`} className="text-xs">Description</Label>
                         <Textarea
-                            id={`items.${index}.description`}
+                            id={`items.${index}.Description`}
                             placeholder="Item description"
-                            {...register(`items.${index}.description`)}
+                            {...register(`items.${index}.Description`)}
                             className="min-h-[40px]"
                         />
-                         {errors.items?.[index]?.description && <p className="text-xs text-red-500">{errors.items?.[index]?.description?.message}</p>}
+                         {errors.items?.[index]?.Description && <p className="text-xs text-red-500">{errors.items?.[index]?.Description?.message}</p>}
                     </div>
                     <div className="space-y-1 self-start">
-                        <Label htmlFor={`items.${index}.quantity`} className="text-xs">Quantity</Label>
+                        <Label htmlFor={`items.${index}.Quantity`} className="text-xs">Quantity</Label>
                         <Input
-                            id={`items.${index}.quantity`}
+                            id={`items.${index}.Quantity`}
                             type="number"
                             placeholder="0"
-                            {...register(`items.${index}.quantity`, { valueAsNumber: true })}
+                            {...register(`items.${index}.Quantity`, { valueAsNumber: true })}
                         />
-                         {errors.items?.[index]?.quantity && <p className="text-xs text-red-500">{errors.items?.[index]?.quantity?.message}</p>}
+                         {errors.items?.[index]?.Quantity && <p className="text-xs text-red-500">{errors.items?.[index]?.Quantity?.message}</p>}
                     </div>
                      <div className="space-y-1 self-start">
-                        <Label htmlFor={`items.${index}.area`} className="text-xs">Area per Qty</Label>
+                        <Label htmlFor={`items.${index}.Area`} className="text-xs">Area per Qty</Label>
                         <Input
-                            id={`items.${index}.area`}
+                            id={`items.${index}.Area`}
                             type="number"
                             placeholder="0.00"
-                            {...register(`items.${index}.area`, { valueAsNumber: true })}
+                            {...register(`items.${index}.Area`, { valueAsNumber: true })}
                         />
-                         {errors.items?.[index]?.area && <p className="text-xs text-red-500">{errors.items?.[index]?.area?.message}</p>}
+                         {errors.items?.[index]?.Area && <p className="text-xs text-red-500">{errors.items?.[index]?.Area?.message}</p>}
                     </div>
                     <div className="space-y-1 self-start">
-                        <Label htmlFor={`items.${index}.unit`} className="text-xs">Unit</Label>
+                        <Label htmlFor={`items.${index}.UnitId`} className="text-xs">Unit</Label>
                         <Controller
                             control={control}
-                            name={`items.${index}.unit`}
+                            name={`items.${index}.UnitId`}
                             render={({ field }) => (
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value as string}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Unit" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {units.map((unit) => (
-                                            <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                                            <SelectItem key={unit.Id} value={unit.Id}>{unit.Name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -299,24 +307,24 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                         />
                     </div>
                     <div className="space-y-1 self-start">
-                        <Label htmlFor={`items.${index}.rate`} className="text-xs">Rate</Label>
+                        <Label htmlFor={`items.${index}.Rate`} className="text-xs">Rate</Label>
                         <Input
-                            id={`items.${index}.rate`}
+                            id={`items.${index}.Rate`}
                             type="number"
                             placeholder="0.00"
-                            {...register(`items.${index}.rate`, { valueAsNumber: true })}
+                            {...register(`items.${index}.Rate`, { valueAsNumber: true })}
                         />
-                         {errors.items?.[index]?.rate && <p className="text-xs text-red-500">{errors.items?.[index]?.rate?.message}</p>}
+                         {errors.items?.[index]?.Rate && <p className="text-xs text-red-500">{errors.items?.[index]?.Rate?.message}</p>}
                     </div>
                     <div className="space-y-1 flex flex-col items-center justify-start h-full pt-1.5">
-                        <Label htmlFor={`items.${index}.material`} className="text-xs mb-2">Material</Label>
+                        <Label htmlFor={`items.${index}.IsWithMaterial`} className="text-xs mb-2">Material</Label>
                         <Controller
                             control={control}
-                            name={`items.${index}.material`}
+                            name={`items.${index}.IsWithMaterial`}
                             render={({ field }) => (
                                 <Checkbox
-                                    id={`items.${index}.material`}
-                                    checked={field.value}
+                                    id={`items.${index}.IsWithMaterial`}
+                                    checked={field.value ?? false}
                                     onCheckedChange={field.onChange}
                                 />
                             )}
@@ -346,7 +354,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => append({ description: '', unit: 'Square Feet', quantity: 1, rate: 0, area: 0, material: true, id: `new-${fields.length}` })}
+                onClick={() => append({ Description: '', UnitId: units[0]?.Id || '', Quantity: 1, Rate: 0, Area: 0, IsWithMaterial: true })}
               >
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Add Item

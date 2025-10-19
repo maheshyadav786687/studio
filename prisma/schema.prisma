@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:../workspace/database.db"
+}
+
+model Status {
+  Id             String          @id @default(uuid())
+  Type           String
+  Name           String          @unique
+  Color          String?
+  IsActive       Boolean?        @default(true)
+  CreatedBy      String?
+  CreatedOn      DateTime        @default(now())
+  ModifiedBy     String?
+  ModifiedOn     DateTime?       @updatedAt
+  Companies      Company[]
+  Users          User[]
+  Units          Unit[]
+  Clients        Client[]
+  Sites          Site[]
+  Projects       Project[]
+  Quotations     Quotation[]
+  QuotationItems QuotationItem[]
+}
+
+model Role {
+  Id          String   @id @default(uuid())
+  Name        String   @unique
+  Permissions String?
+  CreatedBy   String?
+  CreatedOn   DateTime @default(now())
+  ModifiedBy  String?
+  ModifiedOn  DateTime? @updatedAt
+  Users       User[]
+}
+
+model Plan {
+  Id            String   @id @default(uuid())
+  Name          String
+  Price         Float
+  ProjectsLimit Int?
+  UsersLimit    Int?
+  Features      String?
+  CreatedBy     String?
+  CreatedOn     DateTime @default(now())
+  ModifiedBy    String?
+  ModifiedOn    DateTime? @updatedAt
+  Companies     Company[]
+}
+
+model Company {
+  Id             String          @id @default(uuid())
+  Name           String
+  GstNumber      String?
+  Address        String?
+  PlanId         String?
+  StatusId       String?
+  CreatedBy      String?
+  CreatedOn      DateTime        @default(now())
+  ModifiedBy     String?
+  ModifiedOn     DateTime?       @updatedAt
+  Plan           Plan?           @relation(fields: [PlanId], references: [Id])
+  Status         Status?         @relation(fields: [StatusId], references: [Id])
+  Users          User[]
+  ActivityLogs   ActivityLog[]
+  Units          Unit[]
+  Clients        Client[]
+  Sites          Site[]
+  Projects       Project[]
+  Quotations     Quotation[]
+  QuotationItems QuotationItem[]
+}
+
+model User {
+  Id           String        @id @default(uuid())
+  CompanyId    String
+  Name         String
+  Email        String        @unique
+  Password     String
+  RoleId       String?
+  StatusId     String?
+  CreatedBy    String?
+  CreatedOn    DateTime      @default(now())
+  ModifiedBy   String?
+  ModifiedOn   DateTime?     @updatedAt
+  Company      Company       @relation(fields: [CompanyId], references: [Id])
+  Role         Role?         @relation(fields: [RoleId], references: [Id])
+  Status       Status?       @relation(fields: [StatusId], references: [Id])
+  ActivityLogs ActivityLog[]
+}
+
+model ActivityLog {
+  Id         String   @id @default(uuid())
+  CompanyId  String
+  UserId     String?
+  Module     String
+  Action     String
+  RecordId   String?
+  Changes    String?
+  CreatedBy  String?
+  CreatedOn  DateTime @default(now())
+  ModifiedBy String?
+  ModifiedOn DateTime? @updatedAt
+  Company    Company  @relation(fields: [CompanyId], references: [Id])
+  User       User?    @relation(fields: [UserId], references: [Id])
+}
+
+model Unit {
+  Id             String          @id @default(uuid())
+  CompanyId      String
+  Name           String
+  ShortCode      String
+  StatusId       String?
+  CreatedBy      String?
+  CreatedOn      DateTime        @default(now())
+  ModifiedBy     String?
+  ModifiedOn     DateTime?       @updatedAt
+  Company        Company         @relation(fields: [CompanyId], references: [Id])
+  Status         Status?         @relation(fields: [StatusId], references: [Id])
+  QuotationItems QuotationItem[]
+
+  @@unique([Name, CompanyId])
+}
+
+model Client {
+  Id            String      @id @default(uuid())
+  CompanyId     String
+  Name          String
+  ContactPerson String?
+  Phone         String?
+  Email         String?     @unique
+  Address       String?
+  StatusId      String?
+  CreatedBy     String?
+  CreatedOn     DateTime    @default(now())
+  ModifiedBy    String?
+  ModifiedOn    DateTime?   @updatedAt
+  Company       Company     @relation(fields: [CompanyId], references: [Id])
+  Status        Status?     @relation(fields: [StatusId], references: [Id])
+  Sites         Site[]
+  Projects      Project[]
+  Quotations    Quotation[]
+}
+
+model Site {
+  Id          String      @id @default(uuid())
+  CompanyId   String
+  ClientId    String
+  Name        String
+  Location    String?
+  StatusId    String?
+  CreatedBy   String?
+  CreatedOn   DateTime    @default(now())
+  ModifiedBy  String?
+  ModifiedOn  DateTime?   @updatedAt
+  Company     Company     @relation(fields: [CompanyId], references: [Id])
+  Client      Client      @relation(fields: [ClientId], references: [Id])
+  Status      Status?     @relation(fields: [StatusId], references: [Id])
+  Projects    Project[]
+  Quotations  Quotation[]
+}
+
+model Project {
+  Id          String      @id @default(uuid())
+  CompanyId   String
+  ClientId    String?
+  SiteId      String?
+  Name        String
+  Description String?
+  StartDate   String?
+  EndDate     String?
+  StatusId    String?
+  CreatedBy   String?
+  CreatedOn   DateTime    @default(now())
+  ModifiedBy  String?
+  ModifiedOn  DateTime?   @updatedAt
+  Company     Company     @relation(fields: [CompanyId], references: [Id])
+  Client      Client?     @relation(fields: [ClientId], references: [Id])
+  Site        Site?       @relation(fields: [SiteId], references: [Id])
+  Status      Status?     @relation(fields: [StatusId], references: [Id])
+  Quotations  Quotation[]
+}
+
+model Quotation {
+  Id             String          @id @default(uuid())
+  CompanyId      String
+  ClientId       String
+  SiteId         String?
+  ProjectId      String?
+  Amount         Float
+  Description    String?
+  StatusId       String?
+  CreatedBy      String?
+  CreatedOn      DateTime        @default(now())
+  ModifiedBy     String?
+  ModifiedOn     DateTime?       @updatedAt
+  Company        Company         @relation(fields: [CompanyId], references: [Id])
+  Client         Client          @relation(fields: [ClientId], references: [Id])
+  Site           Site?           @relation(fields: [SiteId], references: [Id])
+  Project        Project?        @relation(fields: [ProjectId], references: [Id])
+  Status         Status?         @relation(fields: [StatusId], references: [Id])
+  QuotationItems QuotationItem[]
+}
+
+model QuotationItem {
+  Id             String    @id @default(uuid())
+  CompanyId      String
+  QuotationId    String
+  Description    String
+  IsWithMaterial Boolean?  @default(false)
+  Quantity       Float?    @default(0)
+  UnitId         String?
+  Area           Float?
+  Rate           Float?    @default(0)
+  TotalAmount    Float?
+  StatusId       String?
+  CreatedBy      String?
+  CreatedOn      DateTime  @default(now())
+  ModifiedBy     String?
+  ModifiedOn     DateTime? @updatedAt
+  Company        Company   @relation(fields: [CompanyId], references: [Id])
+  Quotation      Quotation @relation(fields: [QuotationId], references: [Id])
+  Unit           Unit?     @relation(fields: [UnitId], references: [Id])
+  Status         Status?   @relation(fields: [StatusId], references: [Id])
+}

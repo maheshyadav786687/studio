@@ -31,8 +31,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { MoreHorizontal, Pencil, Trash2, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -49,7 +48,7 @@ import {
 
 export const columns: ColumnDef<Client>[] = [
   {
-    accessorKey: 'name',
+    accessorKey: 'Name',
     header: ({ column }) => {
       return (
         <Button
@@ -66,47 +65,19 @@ export const columns: ColumnDef<Client>[] = [
       return (
         <div className="flex items-center gap-3 pl-4">
           <Avatar>
-            <AvatarImage src={client.avatarUrl} alt={client.name} data-ai-hint="person portrait" />
-            <AvatarFallback>{client.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{client.Name.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col">
-             <span className="font-medium">{client.name}</span>
-             <span className="text-sm text-muted-foreground">{client.email}</span>
+             <span className="font-medium">{client.Name}</span>
+             <span className="text-sm text-muted-foreground">{client.Email}</span>
           </div>
         </div>
       );
     },
   },
   {
-    accessorKey: 'company',
-    header: ({ column }) => {
-        return (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-          >
-            Company
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        );
-      },
-      cell: ({ row }) => <div className="pl-4">{row.getValue("company")}</div>,
-  },
-  {
-    accessorKey: 'phone',
+    accessorKey: 'Phone',
     header: 'Phone',
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status',
-    cell: ({ row }) => {
-      const status = row.getValue('status') as string;
-      return (
-        <Badge variant={status === 'Active' ? 'secondary' : 'outline'} className={status === 'Active' ? 'bg-green-100 text-green-800' : ''}>
-          {status}
-        </Badge>
-      );
-    },
   },
   {
     accessorKey: 'sitesCount',
@@ -193,9 +164,9 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
         <div className="flex items-center justify-between p-6">
           <Input
             placeholder="Filter clients by name..."
-            value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+            value={(table.getColumn('Name')?.getFilterValue() as string) ?? ''}
             onChange={(event) =>
-              table.getColumn('name')?.setFilterValue(event.target.value)
+              table.getColumn('Name')?.setFilterValue(event.target.value)
             }
             className="max-w-sm"
           />

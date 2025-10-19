@@ -6,17 +6,7 @@ export const dynamic = 'force-dynamic';
 import { Button } from "@/components/ui/button"
 import { ProjectCard } from "@/components/projects/project-card"
 import type { Project } from "@/lib/types";
-import { getProjects as fetchProjects } from "@/lib/services/project-api-service";
-
-async function getProjects(): Promise<Project[]> {
-  try {
-    // UIL calls the Frontend API Service
-    return await fetchProjects();
-  } catch (error) {
-    console.error("Error fetching projects:", error);
-    return []; // Return empty array on error
-  }
-}
+import { getProjects } from "@/lib/bll/project-bll";
 
 
 export default async function ProjectsPage() {
@@ -40,7 +30,7 @@ export default async function ProjectsPage() {
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {projects.map(project => (
-          <ProjectCard key={project.id} project={project} />
+          <ProjectCard key={project.Id} project={project} />
         ))}
         {projects.length === 0 && (
             <p className="text-muted-foreground col-span-full">No projects found.</p>

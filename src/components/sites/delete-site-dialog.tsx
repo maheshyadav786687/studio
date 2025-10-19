@@ -15,7 +15,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import type { Site } from '@/lib/types';
 import React from 'react';
-import { deleteSite as removeSite } from '@/lib/services/site-api-service';
+import { deleteSite as removeSite } from '@/lib/bll/site-bll';
 
 type DeleteSiteDialogProps = {
   site: Site;
@@ -32,7 +32,7 @@ export function DeleteSiteDialog({ site, children, onOpenChange, open }: DeleteS
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await removeSite(site.id);
+      await removeSite(site.Id);
       
       toast({
         title: 'Success',
@@ -61,7 +61,7 @@ export function DeleteSiteDialog({ site, children, onOpenChange, open }: DeleteS
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the site
-            named <span className="font-semibold">{site.name}</span> and remove its data from our servers.
+            named <span className="font-semibold">{site.Name}</span> and remove its data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

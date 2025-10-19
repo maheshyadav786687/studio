@@ -14,7 +14,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import type { Client } from '@/lib/types';
 import React from 'react';
-import { deleteClient as removeClient } from '@/lib/services/client-api-service';
+import { deleteClient as removeClient } from '@/lib/bll/client-bll';
 
 type DeleteClientDialogProps = {
   client: Client;
@@ -30,16 +30,15 @@ export function DeleteClientDialog({ client, children, onOpenChange, open }: Del
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    // UIL calls the Frontend API Service
     try {
-      await removeClient(client.id);
+      await removeClient(client.Id);
       
       toast({
         title: 'Success',
         description: 'Client deleted successfully.',
       });
 
-      router.refresh(); // Re-fetch data and re-render
+      router.refresh();
       if (onOpenChange) onOpenChange(false);
 
     } catch (error: any) {
@@ -61,7 +60,7 @@ export function DeleteClientDialog({ client, children, onOpenChange, open }: Del
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
             This action cannot be undone. This will permanently delete the client
-            account for <span className="font-semibold">{client.name}</span> and remove their data from our servers.
+            account for <span className="font-semibold">{client.Name}</span> and remove their data from our servers.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

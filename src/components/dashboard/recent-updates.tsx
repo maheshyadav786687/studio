@@ -1,14 +1,14 @@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { getProjects } from '@/lib/bll/project-bll';
-
+import { ProjectUpdate } from '@/lib/types';
 
 async function getRecentUpdates() {
     try {
         const projects = await getProjects();
         const allUpdates = projects
-            .flatMap(p => p.updates.map(u => ({ ...u, projectName: p.name })))
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .flatMap(p => (p.updates || []).map((u: ProjectUpdate) => ({ ...u, projectName: p.Name })))
+            .sort((a, b) => new Date(b.CreatedOn).getTime() - new Date(a.CreatedOn).getTime())
             .slice(0, 5);
         return allUpdates;
     } catch (error) {
@@ -32,14 +32,13 @@ export async function RecentUpdates() {
           {allUpdates.map((update, index) => (
             <div key={index} className="flex items-start gap-4">
               <Avatar className="h-9 w-9">
-                <AvatarImage src={update.authorAvatar} alt={update.author} data-ai-hint="person portrait"/>
-                <AvatarFallback>{update.author.charAt(0)}</AvatarFallback>
+                <AvatarFallback>{update.CreatedBy.charAt(0)}</AvatarFallback>
               </Avatar>
               <div className="grid gap-1">
                 <p className="text-sm font-medium leading-none">
-                  {update.author} <span className="text-xs text-muted-foreground">on {update.projectName}</span>
+                  {update.CreatedBy} <span className="text-xs text-muted-foreground">on {update.projectName}</span>
                 </p>
-                <p className="text-sm text-muted-foreground">{update.summary || update.content}</p>
+                <p className="text-sm text-muted-foreground">{update.Summary || update.UpdateContent}</p>
               </div>
             </div>
           ))}

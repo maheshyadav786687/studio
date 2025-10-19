@@ -47,7 +47,7 @@ import {
 
 export const columns: ColumnDef<Site>[] = [
   {
-    accessorKey: 'name',
+    accessorKey: 'Name',
     header: ({ column }) => {
       return (
         <Button
@@ -59,11 +59,20 @@ export const columns: ColumnDef<Site>[] = [
         </Button>
       );
     },
-    cell: ({ row }) => <div className="pl-4 font-medium">{row.getValue("name")}</div>,
+    cell: ({ row }) => <div className="pl-4 font-medium">{row.getValue("Name")}</div>,
   },
   {
-    accessorKey: 'address',
+    accessorKey: 'Address',
     header: "Address",
+    cell: ({ row }) => {
+        const site = row.original
+        return (
+          <div>
+            <div>{site.Address}</div>
+            <div className="text-sm text-muted-foreground">{site.clientAddress}</div>
+          </div>
+        )
+      },
   },
   {
     accessorKey: 'clientName',
@@ -78,7 +87,7 @@ export const columns: ColumnDef<Site>[] = [
           </Button>
         );
       },
-      cell: ({ row }) => <div className="pl-4">{row.original.client?.name || 'N/A'}</div>,
+      cell: ({ row }) => <div className="pl-4">{row.getValue("clientName")}</div>,
   },
   {
     id: 'counts',
@@ -180,9 +189,9 @@ export function SitesTable({ sites }: { sites: Site[] }) {
         <div className="flex items-center justify-between py-4">
           <Input
             placeholder="Filter sites by name..."
-            value={(table.getColumn('name')?.getFilterValue() as string) ?? ''}
+            value={(table.getColumn('Name')?.getFilterValue() as string) ?? ''}
             onChange={(event) =>
-              table.getColumn('name')?.setFilterValue(event.target.value)
+              table.getColumn('Name')?.setFilterValue(event.target.value)
             }
             className="max-w-sm"
           />

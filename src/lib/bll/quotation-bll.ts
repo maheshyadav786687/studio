@@ -8,20 +8,22 @@ import {
     updateQuotation as updateDbQuotation,
     deleteQuotation as deleteDbQuotation,
     findQuotationById,
+} from '@/lib/dal/quotation-dal';
+import {
     findSiteById,
     findManySitesGroupedByClient,
-} from '@/lib/database';
-import type { Quotation } from '@/lib/types';
+} from '@/lib/dal/site-dal';
+import type { Quotation, QuotationFormData } from '@/lib/types';
 import { QuotationFormSchema } from '@/lib/types';
 import { z } from 'zod';
 
 
-export type QuotationCreateDto = z.infer<typeof QuotationFormSchema>;
+export type QuotationCreateDto = QuotationFormData;
 export type QuotationUpdateDto = Partial<QuotationCreateDto>;
 
 export async function getQuotations(): Promise<Quotation[]> {
   const quotations = await findManyQuotations();
-  return quotations.map(q => ({ ...q, items: q.items.map(item => ({...item, material: Boolean(item.material)})) }));
+  return quotations.map(q => ({ ...q, QuotationItems: (q.QuotationItems || []).map(item => ({...item, IsWithMaterial: Boolean(item.IsWithMaterial)})) }));
 }
 
 export async function getSitesGroupedByClient() {
@@ -31,7 +33,7 @@ export async function getSitesGroupedByClient() {
 export async function getQuotationById(id: string): Promise<Quotation | undefined> {
     const quotation =  await findQuotationById(id);
     if (quotation) {
-      return { ...quotation, items: quotation.items.map(item => ({...item, material: Boolean(item.material)})) };
+      return { ...quotation, QuotationItems: (quotation.QuotationItems || []).map(item => ({...item, IsWithMaterial: Boolean(item.IsWithMaterial)})) };
     }
     return undefined;
 }
@@ -39,19 +41,22 @@ export async function getQuotationById(id: string): Promise<Quotation | undefine
 export async function createQuotation(quotationDto: QuotationCreateDto): Promise<Quotation> {
     const validatedData = QuotationFormSchema.parse(quotationDto);
     
-    const site = await findSiteById(validatedData.siteId);
+    if (!validatedData.SiteId) {
+        throw new Error('Site ID is required.');
+    }
+
+    const site = await findSiteById(validatedData.SiteId);
     if (!site) {
         throw new Error('Invalid site ID provided.');
     }
     
-    // For simplicity, we'll pass the whole DTO. In a real app, you might transform it.
-    const newQuotation = await createDbQuotation(validatedData);
+    const newQuotation = await createDbQuotation(validatedData, site.ClientId);
     return newQuotation;
 }
 
 export async function updateQuotation(id: string, quotationDto: QuotationUpdateDto): Promise<Quotation | undefined> {
-    if (quotationDto.siteId) {
-        const site = await findSiteById(quotationDto.siteId);
+    if (quotationDto.SiteId) {
+        const site = await findSiteById(quotationDto.SiteId);
         if (!site) {
             throw new Error('Invalid site ID provided.');
         }
@@ -61,6 +66,5 @@ export async function updateQuotation(id: string, quotationDto: QuotationUpdateD
 }
 
 export async function deleteQuotation(id: string): Promise<void> {
-  // Business logic could go here, e.g., check if quotation is approved
   await deleteDbQuotation(id);
 }
