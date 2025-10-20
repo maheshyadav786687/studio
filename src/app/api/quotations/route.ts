@@ -1,32 +1,31 @@
 
-import { NextResponse } from 'next/server';
-import { getQuotations, createQuotation } from '@/lib/bll/quotation-bll';
-import { QuotationFormSchema } from '@/lib/types';
+import { NextResponse } from "next/server";
+import * as quotationBLL from "@/lib/bll/quotation-bll";
+import { QuotationFormData } from "@/lib/types";
 
 export async function GET() {
   try {
-    const quotations = await getQuotations();
-    return NextResponse.json(quotations);
+    const quotations = await quotationBLL.getQuotations();
+    return NextResponse.json(quotations, { status: 200 });
   } catch (error) {
-    console.error('[API_QUOTATIONS_GET]', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to fetch quotations" },
+      { status: 500 }
+    );
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(request: Request) {
   try {
-    const json = await req.json();
-    const validatedFields = QuotationFormSchema.safeParse(json);
-    
-    if (!validatedFields.success) {
-      return NextResponse.json({ error: 'Invalid fields', details: validatedFields.error.flatten() }, { status: 400 });
-    }
-
-    const newQuotation = await createQuotation(validatedFields.data);
+    const data: QuotationFormData = await request.json();
+    const newQuotation = await quotationBLL.createQuotation(data);
     return NextResponse.json(newQuotation, { status: 201 });
   } catch (error) {
-     console.error('[API_QUOTATIONS_POST]', error);
-     const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-     return new NextResponse(errorMessage, { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to create quotation" },
+      { status: 500 }
+    );
   }
 }

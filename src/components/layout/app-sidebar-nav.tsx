@@ -53,7 +53,6 @@ const navItems = [
       { href: "/admin/clients", icon: Users, label: "Clients" },
       { href: "/admin/sites", icon: Building2, label: "Sites" },
       { href: "/admin/quotations", icon: FileText, label: "Quotes" },
-      { href: "#", icon: ClipboardList, label: "Work Orders" },
     ],
   },
   {

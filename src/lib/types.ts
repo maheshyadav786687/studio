@@ -72,7 +72,7 @@ export const SiteSchema = z.object({
     ClientId: z.string({ required_error: 'Client is required.' }),
     CompanyId: z.string(),
     StatusId: z.string().nullable(),
-    client: ClientSchema.optional(),
+    Client: ClientSchema.optional(),
     projectsCount: z.number().int().optional(),
     quotationsCount: z.number().int().optional(),
   });
@@ -87,7 +87,7 @@ export const SiteFormSchema = SiteSchema.omit({
     Id: true, 
     CompanyId: true, 
     StatusId: true, 
-    client: true, 
+    Client: true, 
     projectsCount: true, 
     quotationsCount: true 
 });
@@ -102,67 +102,38 @@ export const QuotationItemSchema = z.object({
     Id: z.string(),
     QuotationId: z.string(),
     Description: z.string().min(1, 'Description is required.'),
-    Quantity: z.number().min(0, 'Quantity must be positive.').nullable(),
-    UnitId: z.string().nullable(),
-    Rate: z.number().min(0, 'Rate must be positive.').nullable(),
-    Amount: z.number().optional().nullable(),
-    TotalAmount: z.number().optional().nullable(),
-    Area: z.number().min(0, 'Area must be positive.').optional().nullable(),
-    IsWithMaterial: z.boolean().nullable(),
-    CompanyId: z.string(),
-    StatusId: z.string().nullable(),
+    Quantity: z.number().min(0, 'Quantity must be positive.'),
+    UnitId: z.string(),
+    Rate: z.number().min(0, 'Rate must be positive.'),
+    Amount: z.number(), // This maps to TotalAmount in the DB
+    Area: z.number().min(0, 'Area must be positive.').optional(),
+    IsWithMaterial: z.boolean(),
   });
   export type QuotationItem = z.infer<typeof QuotationItemSchema>;
   
   export const QuotationSchema = z.object({
     Id: z.string(),
     Amount: z.number(),
-    Description: z.string().min(3, 'Description must be at least 3 characters.').nullable(),
-    SiteId: z.string({ required_error: 'Site is required.' }).nullable(),
+    Description: z.string().nullable(),
+    SiteId: z.string({ required_error: 'Site is required.' }),
     ClientId: z.string(),
     CompanyId: z.string(),
-    StatusId: z.string().nullable(),
+    StatusId: z.string(),
     CreatedOn: z.date(),
-    CreatedBy: z.string().nullable(),
-    ModifiedOn: z.date().optional().nullable(),
-    ModifiedBy: z.string().optional().nullable(),
-    siteName: z.string().optional(), // Populated from DB join
-    clientName: z.string().optional(), // Populated from DB join
-    items: z.array(QuotationItemSchema).optional(),
+    CreatedBy: z.string(),
+    ModifiedOn: z.date().optional(),
+    ModifiedBy: z.string().optional(),
     Site: SiteSchema.optional(),
-    Client: ClientSchema.optional(),
     QuotationItems: z.array(QuotationItemSchema).optional(),
   });
   export type Quotation = z.infer<typeof QuotationSchema>;
-  
-  const FormQuotationItemSchema = QuotationItemSchema.omit({ 
-      Id: true, 
-      QuotationId: true,
-      Amount: true,
-      CompanyId: true,
-      StatusId: true
-    });
-  
-  export const QuotationFormSchema = QuotationSchema.omit({ 
-      Id: true, 
-      Amount: true, 
-      ClientId: true,
-      CompanyId: true, 
-      StatusId: true,
-      CreatedOn: true,
-      CreatedBy: true,
-      ModifiedOn: true,
-      ModifiedBy: true,
-      siteName: true,
-      clientName: true,
-      Site: true,
-      Client: true,
-      QuotationItems: true,
-      items: true,
-  }).extend({
-      items: z.array(FormQuotationItemSchema).optional(),
-      Description: z.string().min(3, 'Description must be at least 3 characters.'),
+    
+  const QuotationItemFormSchema = QuotationItemSchema.omit({ Id: true, QuotationId: true, Amount: true});
+
+  export const QuotationFormSchema = z.object({
+      Description: z.string().optional(),
       SiteId: z.string({ required_error: 'Site is required.' }),
+      items: z.array(QuotationItemFormSchema).optional(),
   });
   export type QuotationFormData = z.infer<typeof QuotationFormSchema>;
 

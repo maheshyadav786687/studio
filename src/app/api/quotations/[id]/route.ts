@@ -1,51 +1,56 @@
 
-import { NextRequest, NextResponse } from 'next/server';
-import { updateQuotation, deleteQuotation } from '@/lib/bll/quotation-bll';
-import { QuotationFormSchema } from '@/lib/types';
+import { NextResponse } from "next/server";
+import * as quotationBLL from "@/lib/bll/quotation-bll";
+import { QuotationFormData } from "@/lib/types";
 
-export async function PATCH(
-  req: NextRequest,
+export async function GET(
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    if (!params.id) {
-      return new NextResponse('Quotation ID is required', { status: 400 });
+    const quotation = await quotationBLL.getQuotation(params.id);
+    if (!quotation) {
+      return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
     }
-    const json = await req.json();
-    
-    const validatedFields = QuotationFormSchema.partial().safeParse(json);
-    if (!validatedFields.success) {
-      return NextResponse.json({ error: 'Invalid fields', details: validatedFields.error.flatten() }, { status: 400 });
-    }
-
-    const updatedQuotation = await updateQuotation(params.id, validatedFields.data);
-
-    if (!updatedQuotation) {
-      return new NextResponse('Quotation not found', { status: 404 });
-    }
-    
-    return NextResponse.json(updatedQuotation);
+    return NextResponse.json(quotation, { status: 200 });
   } catch (error) {
-    console.error('[API_QUOTATION_ID_PATCH]', error);
-    const errorMessage = error instanceof Error ? error.message : 'Internal Server Error';
-    return new NextResponse(errorMessage, { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to fetch quotation" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const data: QuotationFormData = await request.json();
+    const updatedQuotation = await quotationBLL.updateQuotation(params.id, data);
+    return NextResponse.json(updatedQuotation, { status: 200 });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to update quotation" },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(
-  req: NextRequest,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    if (!params.id) {
-      return new NextResponse('Quotation ID is required', { status: 400 });
-    }
-
-    await deleteQuotation(params.id);
-    
-    return new NextResponse(null, { status: 204 });
+    await quotationBLL.deleteQuotation(params.id);
+    return new Response(null, { status: 204 });
   } catch (error) {
-    console.error('[API_QUOTATION_ID_DELETE]', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error(error);
+    return NextResponse.json(
+      { error: "Failed to delete quotation" },
+      { status: 500 }
+    );
   }
 }

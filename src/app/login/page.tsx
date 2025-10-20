@@ -37,7 +37,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen">
+    <div className="w-full lg:grid lg:min-h-screen lg:grid-cols-2 xl:min-h-screen" suppressHydrationWarning>
       <div className="flex items-center justify-center py-12">
         <div className="mx-auto grid w-[350px] gap-6">
           <div className="grid gap-2 text-center">
@@ -88,6 +88,8 @@ export default function LoginPage() {
                 src={loginBg.imageUrl}
                 alt={loginBg.description}
                 fill
+                priority
+                sizes="(min-width: 1024px) 50vw, 100vw"
                 className="object-cover"
                 data-ai-hint={loginBg.imageHint}
             />

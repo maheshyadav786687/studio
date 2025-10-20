@@ -19,11 +19,13 @@ export type SiteCreateDto = SiteFormData;
 export type SiteUpdateDto = Partial<SiteCreateDto>;
 
 // BLL function to get all sites.
-export async function getSites(): Promise<Site[]> {
-  // Fetches sites from the database.
-  const sites = await findManySites();
-  // Business logic can be added here (e.g., mapping additional data) if needed.
-  return sites;
+export async function getSites(options: { page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string, all?: boolean } = {}) {
+  const { page, limit, sortBy, sortOrder, search, all } = options;
+  if (all) {
+    const sites = await findManySites({});
+    return { sites, total: sites.length };
+  }
+  return await findManySites({ page, limit, sortBy, sortOrder, search });
 }
 
 // BLL function to get sites grouped by their respective clients.
