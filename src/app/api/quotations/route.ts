@@ -1,12 +1,7 @@
 
-import { createQuotation, getQuotations } from "@/lib/bll/quotation-bll";
+import { createQuotation } from "@/lib/bll/quotation-bll";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
-
-export async function GET(request: NextRequest) {
-    const quotations = await getQuotations();
-    return NextResponse.json(quotations);
-}
 
 export async function POST(request: NextRequest) {
     const quotationData = await request.json();

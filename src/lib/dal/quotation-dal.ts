@@ -61,18 +61,22 @@ export async function findQuotationById(id: string): Promise<Quotation | undefin
 export async function createQuotation(quotationData: QuotationFormData): Promise<Quotation> {
     const { items, ...quotation } = quotationData;
 
+    const totalAmount = items ? items.reduce((acc, item) => acc + (item.Quantity || 0) * (item.Rate || 0), 0) : 0;
+
     const createdQuotation = await prisma.$transaction(async (prisma) => {
         const newQuotation = await prisma.quotation.create({
             data: {
                 ...quotation,
+                Amount: totalAmount,
                 CompanyId: COMPANY_ID,
             },
         });
 
         if (items && items.length > 0) {
             await prisma.quotationItem.createMany({
-                data: items.map(({ Amount, ...item }) => ({
+                data: items.map((item) => ({
                     ...item,
+                    TotalAmount: (item.Quantity || 0) * (item.Rate || 0),
                     CompanyId: COMPANY_ID,
                     QuotationId: newQuotation.Id,
                 })),
@@ -89,10 +93,17 @@ export async function createQuotation(quotationData: QuotationFormData): Promise
 export async function updateQuotation(id: string, quotationData: Partial<QuotationFormData>): Promise<Quotation> {
     const { items, ...quotation } = quotationData;
 
+    const totalAmount = items ? items.reduce((acc, item) => acc + (item.Quantity || 0) * (item.Rate || 0), 0) : undefined;
+
     await prisma.$transaction(async (prisma) => {
+        const dataToUpdate: { [key: string]: any } = { ...quotation };
+        if (totalAmount !== undefined) {
+            dataToUpdate.Amount = totalAmount;
+        }
+
         await prisma.quotation.update({
             where: { Id: id },
-            data: quotation,
+            data: dataToUpdate,
         });
 
         if (items) {
@@ -101,8 +112,9 @@ export async function updateQuotation(id: string, quotationData: Partial<Quotati
             });
 
             await prisma.quotationItem.createMany({
-                data: items.map(({ Amount, ...item }) => ({
+                data: items.map((item) => ({
                     ...item,
+                    TotalAmount: (item.Quantity || 0) * (item.Rate || 0),
                     CompanyId: COMPANY_ID,
                     QuotationId: id,
                 })),
