@@ -71,7 +71,7 @@ export async function createQuotation(quotationData: QuotationFormData): Promise
 
         if (items && items.length > 0) {
             await prisma.quotationItem.createMany({
-                data: items.map(item => ({
+                data: items.map(({ Amount, ...item }) => ({
                     ...item,
                     CompanyId: COMPANY_ID,
                     QuotationId: newQuotation.Id,
@@ -101,7 +101,7 @@ export async function updateQuotation(id: string, quotationData: Partial<Quotati
             });
 
             await prisma.quotationItem.createMany({
-                data: items.map(item => ({
+                data: items.map(({ Amount, ...item }) => ({
                     ...item,
                     CompanyId: COMPANY_ID,
                     QuotationId: id,

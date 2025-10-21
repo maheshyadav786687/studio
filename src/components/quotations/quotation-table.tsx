@@ -35,7 +35,7 @@ import { MoreHorizontal, Pencil, Trash2, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 
 import type { Quotation } from '@/lib/types';
-import { QuotationWizard } from './quotation-wizard';
+import { QuotationForm } from './quotation-form';
 import { DeleteQuotationDialog } from './delete-quotation-dialog';
 import {
     Select,
@@ -136,9 +136,9 @@ export const columns: ColumnDef<Quotation>[] = [
 
       return (
         <div className="text-right">
-            <QuotationWizard quotation={quotation} onOpenChange={setIsEditDialogOpen} open={isEditDialogOpen}>
+            <QuotationForm quotation={quotation} onOpenChange={setIsEditDialogOpen} open={isEditDialogOpen}>
                  <span/>
-            </QuotationWizard>
+            </QuotationForm>
             <DeleteQuotationDialog quotation={quotation} onOpenChange={setIsDeleteDialogOpen} open={isDeleteDialogOpen}>
                 <span/>
             </DeleteQuotationDialog>

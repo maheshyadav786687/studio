@@ -3,7 +3,7 @@ import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getQuotations } from "@/lib/bll/quotation-bll";
 import { QuotationTable } from "@/components/quotations/quotation-table";
-import { QuotationWizard } from "@/components/quotations/quotation-wizard";
+import { QuotationForm } from "@/components/quotations/quotation-form";
 import { Suspense } from "react";
 
 export default async function QuotationsPage() {
@@ -17,14 +17,14 @@ export default async function QuotationsPage() {
           <p className="text-muted-foreground">Manage your quotations and view their information.</p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-            <QuotationWizard>
+            <QuotationForm>
                 <Button size="sm" className="h-8 gap-1">
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
                     Add Quotation
                     </span>
                 </Button>
-            </QuotationWizard>
+            </QuotationForm>
         </div>
       </div>
       
