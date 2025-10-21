@@ -6,6 +6,7 @@ import { SiteFormSchema } from '@/lib/types';
 export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const grouped = searchParams.get('grouped');
+    const all = searchParams.get('all') === 'true';
 
     try {
         if (grouped === 'true') {
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
             return NextResponse.json(groupedSites);
         }
 
-        const sites = await getSites();
+        const sites = await getSites({ all });
         return NextResponse.json(sites);
     } catch (error) {
         console.error('[API_SITES_GET]', error);

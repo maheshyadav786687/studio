@@ -1,4 +1,3 @@
-
 'use client';
 import * as React from 'react';
 import {
@@ -12,6 +11,7 @@ import {
   getFilteredRowModel,
   ColumnFiltersState,
 } from '@tanstack/react-table';
+import { format } from 'date-fns';
 
 import {
   Table,
@@ -35,7 +35,7 @@ import { MoreHorizontal, Pencil, Trash2, ArrowUpDown } from 'lucide-react';
 import { Card, CardContent } from "@/components/ui/card";
 
 import type { Quotation } from '@/lib/types';
-import { QuotationDialog } from './quotation-dialog';
+import { QuotationWizard } from './quotation-wizard';
 import { DeleteQuotationDialog } from './delete-quotation-dialog';
 import {
     Select,
@@ -74,22 +74,23 @@ export const columns: ColumnDef<Quotation>[] = [
               </Button>
             );
           },
-        cell: ({ row }) => <div className="pl-4">{row.original.Site.Name}</div>,
+        cell: ({ row }) => <div className="pl-4">{row.original.Site?.Name}</div>,
       },
       {
-          accessorKey: 'Site.Client.Name',
-          header: ({ column }) => {
-            return (
-              <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
-              >
-                Client
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-              </Button>
-            );
-          },
-          cell: ({ row }) => <div className="pl-4">{row.original.Site.Client.Name}</div>,
+        id: 'clientName',
+        accessorFn: row => row.Site?.Client?.Name ?? '',
+        header: ({ column }) => {
+          return (
+            <Button
+              variant="ghost"
+              onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            >
+              Client
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+          );
+        },
+        cell: ({ row }) => <div className="pl-4">{row.getValue('clientName')}</div>,
       },
       {
         accessorKey: 'Description',
@@ -124,7 +125,7 @@ export const columns: ColumnDef<Quotation>[] = [
               </Button>
             );
           },
-        cell: ({ row }) => <div className="pl-4">{new Date(row.original.CreatedOn).toLocaleDateString()}</div>,
+        cell: ({ row }) => <div className="pl-4">{format(new Date(row.original.CreatedOn), 'dd/MM/yyyy')}</div>,
       },
   {
     id: 'actions',
@@ -135,9 +136,9 @@ export const columns: ColumnDef<Quotation>[] = [
 
       return (
         <div className="text-right">
-            <QuotationDialog quotation={quotation} onOpenChange={setIsEditDialogOpen} open={isEditDialogOpen}>
+            <QuotationWizard quotation={quotation} onOpenChange={setIsEditDialogOpen} open={isEditDialogOpen}>
                  <span/>
-            </QuotationDialog>
+            </QuotationWizard>
             <DeleteQuotationDialog quotation={quotation} onOpenChange={setIsDeleteDialogOpen} open={isDeleteDialogOpen}>
                 <span/>
             </DeleteQuotationDialog>
@@ -198,7 +199,11 @@ export function QuotationTable({ quotations, total }: QuotationTableProps) {
 
   const clients = React.useMemo(() => {
     const clientSet = new Set<string>();
-    quotations.forEach(q => clientSet.add(q.Site.Client.Name));
+    quotations.forEach(q => {
+        if (q.Site?.Client?.Name) {
+            clientSet.add(q.Site.Client.Name);
+        }
+    });
     return Array.from(clientSet);
   }, [quotations]);
 
@@ -215,16 +220,16 @@ export function QuotationTable({ quotations, total }: QuotationTableProps) {
             className="max-w-sm"
           />
           <Select
-            value={(table.getColumn('Site.Client.Name')?.getFilterValue() as string) ?? ''}
+            value={(table.getColumn('clientName')?.getFilterValue() as string) ?? 'all'}
             onValueChange={(value) => {
-                table.getColumn('Site.Client.Name')?.setFilterValue(value);
+                table.getColumn('clientName')?.setFilterValue(value === 'all' ? '' : value);
             }}
             >
                 <SelectTrigger className="w-[180px]">
                     <SelectValue placeholder="Filter by client" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="">All Clients</SelectItem>
+                    <SelectItem value="all">All Clients</SelectItem>
                     {clients.map(client => (
                         <SelectItem key={client} value={client}>{client}</SelectItem>
                     ))}

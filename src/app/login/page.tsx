@@ -17,10 +17,12 @@ export default function LoginPage() {
   const loginBg = PlaceHolderImages.find(img => img.id === 'login-bg');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     const response = await fetch('/api/login', {
       method: 'POST',
@@ -32,7 +34,9 @@ export default function LoginPage() {
       router.push('/admin/dashboard');
     } else {
       // Handle error
-      console.error('Login failed');
+      const errorText = await response.text();
+      setError(errorText || 'Login failed');
+      console.error('Login failed:', errorText);
     }
   };
 
@@ -57,6 +61,7 @@ export default function LoginPage() {
             <CardContent>
             <form onSubmit={handleSubmit}>
               <div className="grid gap-4">
+                {error && <p className="text-red-500 text-sm">{error}</p>}
                 <div className="grid gap-2">
                   <Label htmlFor="email">Email</Label>
                   <Input id="email" type="email" placeholder="m@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />

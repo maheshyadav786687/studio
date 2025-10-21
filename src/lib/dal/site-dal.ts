@@ -9,8 +9,8 @@ import type { Site, SiteFormData } from '@/lib/types';
 const COMPANY_ID = '49397632-3864-4c53-A227-2342879B5841'; // Hardcoded company ID
 
 // DAL function to get all sites
-export async function findManySites(options: { page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string } = {}) {
-  const { page = 1, limit = 10, sortBy = 'Name', sortOrder = 'asc', search = '' } = options;
+export async function findManySites(options: { page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string, all?: boolean } = {}) {
+  const { page = 1, limit = 10, sortBy = 'Name', sortOrder = 'asc', search = '', all = false } = options;
 
   const where: any = search ? {
     OR: [
@@ -20,17 +20,22 @@ export async function findManySites(options: { page?: number, limit?: number, so
     ],
   } : {};
 
+  const findOptions: any = {
+    where,
+    include: {
+      Client: true, // Include the related Client
+      _count: { select: { Projects: true, Quotations: true } },
+    },
+    orderBy: { [sortBy]: sortOrder },
+  };
+
+  if (!all) {
+    findOptions.skip = (page - 1) * limit;
+    findOptions.take = limit;
+  }
+
   const [sites, total] = await Promise.all([
-    prisma.site.findMany({
-      where,
-      include: {
-        Client: true, // Include the related Client
-        _count: { select: { Projects: true, Quotations: true } },
-      },
-      orderBy: { [sortBy]: sortOrder },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
+    prisma.site.findMany(findOptions),
     prisma.site.count({ where }),
   ]);
 

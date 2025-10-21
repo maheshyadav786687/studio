@@ -9,10 +9,12 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     const response = await fetch('/api/register', {
       method: 'POST',
@@ -23,8 +25,8 @@ export default function Register() {
     if (response.ok) {
       router.push('/login');
     } else {
-      // Handle error
-      console.error('Registration failed');
+      const errorText = await response.text();
+      setError(errorText || 'Registration failed');
     }
   };
 
@@ -35,6 +37,7 @@ export default function Register() {
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Create your account</h2>
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && <p className="text-red-500 text-center">{error}</p>}
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
               <input

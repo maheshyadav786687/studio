@@ -20,12 +20,7 @@ export type SiteUpdateDto = Partial<SiteCreateDto>;
 
 // BLL function to get all sites.
 export async function getSites(options: { page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string, all?: boolean } = {}) {
-  const { page, limit, sortBy, sortOrder, search, all } = options;
-  if (all) {
-    const sites = await findManySites({});
-    return { sites, total: sites.length };
-  }
-  return await findManySites({ page, limit, sortBy, sortOrder, search });
+  return await findManySites(options);
 }
 
 // BLL function to get sites grouped by their respective clients.

@@ -1,4 +1,3 @@
-
 import { z } from 'zod';
 
 //============================================================================
@@ -128,7 +127,7 @@ export const QuotationItemSchema = z.object({
   });
   export type Quotation = z.infer<typeof QuotationSchema>;
     
-  const QuotationItemFormSchema = QuotationItemSchema.omit({ Id: true, QuotationId: true, Amount: true});
+  const QuotationItemFormSchema = QuotationItemSchema.omit({ Id: true, QuotationId: true });
 
   export const QuotationFormSchema = z.object({
       Description: z.string().optional(),
@@ -190,4 +189,3 @@ export const SubtaskSchema = z.object({
     updates: z.array(ProjectUpdateSchema).optional(),
   });
   export type Project = z.infer<typeof ProjectSchema>;
-
