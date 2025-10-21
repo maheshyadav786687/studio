@@ -1,37 +1,104 @@
+'use client';
 
-import { PlusCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { getQuotations } from "@/lib/bll/quotation-bll";
-import { QuotationTable } from "@/components/quotations/quotation-table";
-import { QuotationForm } from "@/components/quotations/quotation-form";
-import { Suspense } from "react";
+import { useState, useEffect } from 'react';
+import { Quotation, QuotationFormData } from '@/lib/types';
+import {
+  getQuotations,
+  createQuotation,
+  updateQuotation,
+  deleteQuotation,
+} from '@/lib/bll/quotation-bll';
+import QuotationsTable from '@/components/quotations/quotations-table';
+import QuotationDialog from '../../../components/quotations/quotation-dialog';
+import DeleteQuotationDialog from '@/components/quotations/delete-quotation-dialog';
+import { Button } from '@/components/ui/button';
 
-export default async function QuotationsPage() {
-  const quotations = await getQuotations();
+export default function QuotationsPage() {
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedQuotation, setSelectedQuotation] = useState<Quotation | undefined>(
+    undefined,
+  );
+  const [quotationToDelete, setQuotationToDelete] = useState<string | undefined>(
+    undefined,
+  );
+
+  useEffect(() => {
+    async function fetchQuotations() {
+      const data = await getQuotations();
+      setQuotations(data);
+    }
+    fetchQuotations();
+  }, []);
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setSelectedQuotation(undefined);
+  };
+
+  const handleDeleteDialogClose = () => {
+    setIsDeleteDialogOpen(false);
+    setQuotationToDelete(undefined);
+  };
+
+  const handleSaveChanges = async (quotationData: QuotationFormData) => {
+    if (selectedQuotation) {
+      // Update existing quotation
+      const updatedQuotation = await updateQuotation(selectedQuotation.Id, quotationData);
+      if(updatedQuotation){
+          setQuotations(prev =>
+            prev.map(q => (q.Id === updatedQuotation.Id ? updatedQuotation : q)),
+          );
+      }
+    } else {
+      // Create new quotation
+      const newQuotation = await createQuotation(quotationData);
+      if (newQuotation) {
+        setQuotations(prev => [...prev, newQuotation]);
+      }
+    }
+    handleDialogClose();
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (quotationToDelete) {
+      await deleteQuotation(quotationToDelete);
+      setQuotations(prev => prev.filter(q => q.Id !== quotationToDelete));
+      handleDeleteDialogClose();
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-8 p-4">
-       <div className="flex items-center">
-        <div className="flex-1">
-          <h1 className="font-headline text-4xl font-bold tracking-tight">Quotations</h1>
-          <p className="text-muted-foreground">Manage your quotations and view their information.</p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-            <QuotationForm>
-                <Button size="sm" className="h-8 gap-1">
-                    <PlusCircle className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                    Add Quotation
-                    </span>
-                </Button>
-            </QuotationForm>
-        </div>
+    <div className="container mx-auto py-10">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Quotations</h1>
+        <Button onClick={() => setIsDialogOpen(true)}>New Quotation</Button>
       </div>
-      
-      <Suspense fallback={<div>Loading...</div>}>
-        <QuotationTable quotations={quotations} total={quotations.length} />
-      </Suspense>
-
+      <QuotationsTable
+        quotations={quotations}
+        onEdit={quotation => {
+          setSelectedQuotation(quotation);
+          setIsDialogOpen(true);
+        }}
+        onDelete={id => {
+          setQuotationToDelete(id);
+          setIsDeleteDialogOpen(true);
+        }}
+      />
+      {isDialogOpen && (
+        <QuotationDialog
+          quotation={selectedQuotation}
+          onClose={handleDialogClose}
+          onSaveChanges={handleSaveChanges}
+        />
+      )}
+      {isDeleteDialogOpen && (
+        <DeleteQuotationDialog
+          onClose={handleDeleteDialogClose}
+          onConfirm={handleDeleteConfirm}
+        />
+      )}
     </div>
   );
 }

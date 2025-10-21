@@ -1,3 +1,4 @@
+
 import { z } from 'zod';
 
 //============================================================================
@@ -97,95 +98,104 @@ export type SiteFormData = z.infer<typeof SiteFormSchema>;
 // QUOTATION
 //============================================================================
 
-export const QuotationItemSchema = z.object({
-    Id: z.string(),
-    QuotationId: z.string(),
-    Description: z.string().min(1, 'Description is required.'),
-    Quantity: z.number().min(0, 'Quantity must be positive.'),
-    UnitId: z.string(),
-    Rate: z.number().min(0, 'Rate must be positive.'),
-    Amount: z.number(), // This maps to TotalAmount in the DB
-    Area: z.number().min(0, 'Area must be positive.').optional(),
-    IsWithMaterial: z.boolean(),
-  });
-  export type QuotationItem = z.infer<typeof QuotationItemSchema>;
+const QuotationItemObjectSchema = z.object({
+  Id: z.string(),
+  QuotationId: z.string(),
+  Description: z.string().min(1, 'Description is required.'),
+  Quantity: z.number().min(0, 'Quantity must be positive.'),
+  UnitId: z.string(),
+  Rate: z.number().min(0, 'Rate must be positive.'),
+  Amount: z.number(), // This maps to TotalAmount in the DB
+  Area: z.number().min(0, 'Area must be positive.').optional(),
+  IsWithMaterial: z.boolean(),
+});
+
+export const QuotationItemSchema = QuotationItemObjectSchema.transform((data) => ({
+  ...data,
+  Amount: data.Amount, // Keep amount for compatibility
+}));
+export type QuotationItem = z.infer<typeof QuotationItemSchema>;
+
+export const QuotationSchema = z.object({
+  Id: z.string(),
+  Amount: z.number(),
+  Description: z.string().nullable(),
+  SiteId: z.string().nullable(),
+  ClientId: z.string(),
+  CompanyId: z.string(),
+  StatusId: z.string().nullable(),
+  CreatedOn: z.date(),
+  CreatedBy: z.string().nullable(),
+  ModifiedOn: z.date().optional().nullable(),
+  ModifiedBy: z.string().optional().nullable(),
+  Project: z.any().optional(), // Using any to bypass ProjectSchema issues for now
+  Client: ClientSchema.optional(),
+  Status: StatusSchema.optional(),
+  Site: SiteSchema.optional(),
+  QuotationItems: z.array(QuotationItemSchema).optional(),
+});
+export type Quotation = z.infer<typeof QuotationSchema>;
   
-  export const QuotationSchema = z.object({
-    Id: z.string(),
-    Amount: z.number(),
-    Description: z.string().nullable(),
+const QuotationItemFormSchema = QuotationItemObjectSchema.omit({ Id: true, QuotationId: true });
+
+export const QuotationFormSchema = z.object({
+    Description: z.string().optional(),
     SiteId: z.string({ required_error: 'Site is required.' }),
-    ClientId: z.string(),
-    CompanyId: z.string(),
-    StatusId: z.string(),
-    CreatedOn: z.date(),
-    CreatedBy: z.string(),
-    ModifiedOn: z.date().optional(),
-    ModifiedBy: z.string().optional(),
-    Site: SiteSchema.optional(),
-    QuotationItems: z.array(QuotationItemSchema).optional(),
-  });
-  export type Quotation = z.infer<typeof QuotationSchema>;
-    
-  const QuotationItemFormSchema = QuotationItemSchema.omit({ Id: true, QuotationId: true });
-
-  export const QuotationFormSchema = z.object({
-      Description: z.string().optional(),
-      SiteId: z.string({ required_error: 'Site is required.' }),
-      items: z.array(QuotationItemFormSchema).optional(),
-  });
-  export type QuotationFormData = z.infer<typeof QuotationFormSchema>;
-
+    ClientId: z.string({ required_error: 'Client is required.' }),
+    Amount: z.number({ required_error: 'Amount is required.' }),
+    items: z.array(QuotationItemFormSchema).optional(),
+});
+export type QuotationFormData = z.infer<typeof QuotationFormSchema>;
 
 //============================================================================
 // PROJECT
 //============================================================================
 
 export const SubtaskSchema = z.object({
-    Id: z.string(),
-    TaskId: z.string(),
-    Description: z.string(),
-    IsCompleted: z.boolean(),
-    CompanyId: z.string(),
-    StatusId: z.string(),
-  });
-  export type Subtask = z.infer<typeof SubtaskSchema>;
-  
-  export const TaskSchema = z.object({
-    Id: z.string(),
-    ProjectId: z.string(),
-    Description: z.string(),
-    StartDate: z.string().optional(),
-    EndDate: z.string().optional(),
-    AssigneeId: z.string().optional(),
-    CompanyId: z.string(),
-    StatusId: z.string(),
-    subtasks: z.array(SubtaskSchema).optional(),
-  });
-  export type Task = z.infer<typeof TaskSchema>;
-  
-  export const ProjectUpdateSchema = z.object({
-    Id: z.string(),
-    ProjectId: z.string(),
-    UpdateContent: z.string(),
-    Summary: z.string().optional(),
-    CreatedOn: z.string(),
-    CreatedBy: z.string(),
-    CompanyId: z.string(),
-  });
-  export type ProjectUpdate = z.infer<typeof ProjectUpdateSchema>;
-  
-  export const ProjectSchema = z.object({
-    Id: z.string(),
-    Name: z.string(),
-    Description: z.string().nullable(),
-    SiteId: z.string().nullable(), 
-    ClientId: z.string().nullable(), 
-    CompanyId: z.string(),
-    StatusId: z.string().nullable(),
-    StartDate: z.string().nullable(),
-    EndDate: z.string().nullable(),
-    tasks: z.array(TaskSchema).optional(),
-    updates: z.array(ProjectUpdateSchema).optional(),
-  });
-  export type Project = z.infer<typeof ProjectSchema>;
+  Id: z.string(),
+  TaskId: z.string(),
+  Description: z.string(),
+  IsCompleted: z.boolean(),
+  CompanyId: z.string(),
+  StatusId: z.string(),
+});
+export type Subtask = z.infer<typeof SubtaskSchema>;
+
+export const TaskSchema = z.object({
+  Id: z.string(),
+  ProjectId: z.string(),
+  Description: z.string(),
+  StartDate: z.string().optional(),
+  EndDate: z.string().optional(),
+  AssigneeId: z.string().optional(),
+  CompanyId: z.string(),
+  StatusId: z.string(),
+  subtasks: z.array(SubtaskSchema).optional(),
+});
+export type Task = z.infer<typeof TaskSchema>;
+
+export const ProjectUpdateSchema = z.object({
+  Id: z.string(),
+  ProjectId: z.string(),
+  UpdateContent: z.string(),
+  Summary: z.string().optional(),
+  CreatedOn: z.string(),
+  CreatedBy: z.string(),
+  CompanyId: z.string(),
+});
+export type ProjectUpdate = z.infer<typeof ProjectUpdateSchema>;
+
+export const ProjectSchema = z.object({
+  Id: z.string(),
+  Name: z.string(),
+  Description: z.string().nullable(),
+  SiteId: z.string().nullable(), 
+  ClientId: z.string().nullable(), 
+  CompanyId: z.string(),
+  StatusId: z.string().nullable(),
+  StartDate: z.string().nullable(),
+  EndDate: z.string().nullable(),
+  tasks: z.array(TaskSchema).optional(),
+  updates: z.array(ProjectUpdateSchema).optional(),
+});
+export type Project = z.infer<typeof ProjectSchema>;

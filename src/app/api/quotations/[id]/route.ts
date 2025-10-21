@@ -1,1 +1,29 @@
-\nimport { getQuotation, updateQuotation, deleteQuotation } from \"@/lib/bll/quotation-bll\";\nimport { NextRequest, NextResponse } from \"next/server\";\nimport { revalidatePath } from \"next/cache\";\n\nexport async function GET(request: NextRequest, { params }: { params: { id: string } }) {\n    const quotation = await getQuotation(params.id);\n    if (!quotation) {\n        return NextResponse.json({ message: 'Quotation not found' }, { status: 404 });\n    }\n    return NextResponse.json(quotation);\n}\n\nexport async function PUT(request: NextRequest, { params }: { params: { id: string } }) {\n    const quotationData = await request.json();\n    const updatedQuotation = await updateQuotation(params.id, quotationData);\n    revalidatePath(\'/admin/quotations\');\n    revalidatePath(\'/dashboard/quotations\');\n    revalidatePath(\`/admin/quotations/${params.id}\`);\n    return NextResponse.json(updatedQuotation);\n}\n\nexport async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {\n    await deleteQuotation(params.id);\n    revalidatePath(\'/admin/quotations\');\n    revalidatePath(\'/dashboard/quotations\');\n    return NextResponse.json({ message: 'Quotation deleted successfully' });\n}\n
+
+// API route for /api/quotations/[id]
+
+import { NextResponse } from 'next/server';
+import {
+    getQuotationById,
+    updateQuotation,
+    deleteQuotation,
+} from '@/lib/bll/quotation-bll';
+import type { QuotationUpdateDto } from '@/lib/bll/quotation-bll';
+
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+    const quotation = await getQuotationById(params.id);
+    if (!quotation) {
+        return NextResponse.json({ message: 'Quotation not found' }, { status: 404 });
+    }
+    return NextResponse.json(quotation);
+}
+
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
+    const data: QuotationUpdateDto = await request.json();
+    const updatedQuotation = await updateQuotation(params.id, data);
+    return NextResponse.json(updatedQuotation);
+}
+
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+    await deleteQuotation(params.id);
+    return NextResponse.json({ message: 'Quotation deleted successfully' });
+}

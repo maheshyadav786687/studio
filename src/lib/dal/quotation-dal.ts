@@ -12,22 +12,13 @@ const COMPANY_ID = '49397632-3864-4c53-A227-2342879B5841'; // Hardcoded company 
 export async function findManyQuotations(): Promise<Quotation[]> {
   const quotations = await prisma.quotation.findMany({
     include: {
-      Site: {
-        include: {
-            Client: true,
-        },
-      },
+      Client: true,
       Project: true,
-      _count: {
-        select: { QuotationItems: true },
-      },
+      Status: true,
     },
   });
 
-  return quotations.map(quotation => ({
-    ...quotation,
-    itemsCount: quotation._count.QuotationItems,
-  }));
+  return quotations as unknown as Quotation[];
 }
 
 // DAL function to get a single quotation by its ID
@@ -35,94 +26,34 @@ export async function findQuotationById(id: string): Promise<Quotation | undefin
     const quotation = await prisma.quotation.findUnique({
         where: { Id: id },
         include: {
-            Site: {
-                include: {
-                    Client: true,
-                },
-            },
+            Client: true,
             Project: true,
-            QuotationItems: {
-                include: {
-                    Unit: true,
-                },
-            },
+            QuotationItems: true,
+            Status: true,
         },
     });
 
-    if (quotation) {
-        return {
-            ...quotation,
-            items: quotation.QuotationItems,
-        };
-    }
+    return quotation as unknown as Quotation || undefined;
 }
 
 // DAL function to create a new quotation
 export async function createQuotation(quotationData: QuotationFormData): Promise<Quotation> {
-    const { items, ...quotation } = quotationData;
-
-    const totalAmount = items ? items.reduce((acc, item) => acc + (item.Quantity || 0) * (item.Rate || 0), 0) : 0;
-
-    const createdQuotation = await prisma.$transaction(async (prisma) => {
-        const newQuotation = await prisma.quotation.create({
-            data: {
-                ...quotation,
-                Amount: totalAmount,
-                CompanyId: COMPANY_ID,
-            },
-        });
-
-        if (items && items.length > 0) {
-            await prisma.quotationItem.createMany({
-                data: items.map((item) => ({
-                    ...item,
-                    TotalAmount: (item.Quantity || 0) * (item.Rate || 0),
-                    CompanyId: COMPANY_ID,
-                    QuotationId: newQuotation.Id,
-                })),
-            });
-        }
-
-        return newQuotation;
-    });
-
-    return findQuotationById(createdQuotation.Id);
+  const quotation = await prisma.quotation.create({
+    data: {
+        ...quotationData,
+        CompanyId: COMPANY_ID,
+    },
+  });
+  return quotation as unknown as Quotation;
 }
 
 // DAL function to update an existing quotation
 export async function updateQuotation(id: string, quotationData: Partial<QuotationFormData>): Promise<Quotation> {
-    const { items, ...quotation } = quotationData;
-
-    const totalAmount = items ? items.reduce((acc, item) => acc + (item.Quantity || 0) * (item.Rate || 0), 0) : undefined;
-
-    await prisma.$transaction(async (prisma) => {
-        const dataToUpdate: { [key: string]: any } = { ...quotation };
-        if (totalAmount !== undefined) {
-            dataToUpdate.Amount = totalAmount;
-        }
-
-        await prisma.quotation.update({
-            where: { Id: id },
-            data: dataToUpdate,
-        });
-
-        if (items) {
-            await prisma.quotationItem.deleteMany({
-                where: { QuotationId: id },
-            });
-
-            await prisma.quotationItem.createMany({
-                data: items.map((item) => ({
-                    ...item,
-                    TotalAmount: (item.Quantity || 0) * (item.Rate || 0),
-                    CompanyId: COMPANY_ID,
-                    QuotationId: id,
-                })),
-            });
-        }
-    });
-
-    return findQuotationById(id);
+  const quotation = await prisma.quotation.update({
+    where: { Id: id },
+    data: quotationData,
+  });
+  return quotation as unknown as Quotation;
 }
 
 // DAL function to delete a quotation
