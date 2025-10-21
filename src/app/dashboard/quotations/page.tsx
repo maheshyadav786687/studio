@@ -1,7 +1,7 @@
 
 
 import { getQuotations } from "@/lib/bll/quotation-bll";
-import { QuotationList } from "@/components/quotations/quotation-list";
+import { QuotationTable } from "@/components/quotations/quotation-table";
 import { PageHeader } from "@/components/ui/page-header";
 
 export default async function QuotationsPage({
@@ -16,13 +16,13 @@ export default async function QuotationsPage({
     const sortOrder = (searchParams.sortOrder as 'asc' | 'desc') || 'desc';
     const search = (searchParams.search as string) || '';
 
-    const { quotations, total } = await getQuotations(page, limit, sortBy, sortOrder, search);
+    const { quotations, total } = await getQuotations({page, limit, sortBy, sortOrder, search});
 
   return (
     <div>
         <PageHeader title="Quotations" description="Manage your quotations to clients." />
         <div className="container mx-auto py-10">
-            <QuotationList quotations={quotations} total={total} />
+            <QuotationTable quotations={quotations} total={total} />
         </div>
     </div>
   );

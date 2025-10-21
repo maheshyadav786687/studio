@@ -160,8 +160,8 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
 
   return (
     <Card>
-      <CardContent className="p-0">
-        <div className="flex items-center justify-between p-6">
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between py-4">
           <Input
             placeholder="Filter clients by name..."
             value={(table.getColumn('Name')?.getFilterValue() as string) ?? ''}
@@ -235,7 +235,7 @@ export function ClientsTable({ clients }: { clients: Client[] }) {
             </TableBody>
           </Table>
         </div>
-        <div className="flex items-center justify-between p-6">
+        <div className="flex items-center justify-between pt-4">
           <div className="flex-1 text-sm text-muted-foreground">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected.

@@ -8,7 +8,8 @@ import { SiteDialog } from "@/components/sites/site-dialog";
 
 async function getSites(): Promise<Site[]> {
   try {
-    return await fetchSitesFromBll();
+    const { sites } = await fetchSitesFromBll();
+    return sites;
   } catch (error) {
     console.error("Error fetching sites:", error);
     return []; 

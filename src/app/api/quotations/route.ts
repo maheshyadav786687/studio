@@ -1,31 +1,17 @@
 
-import { NextResponse } from "next/server";
-import * as quotationBLL from "@/lib/bll/quotation-bll";
-import { QuotationFormData } from "@/lib/types";
+import { createQuotation, getQuotations } from "@/lib/bll/quotation-bll";
+import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 
-export async function GET() {
-  try {
-    const quotations = await quotationBLL.getQuotations();
-    return NextResponse.json(quotations, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Failed to fetch quotations" },
-      { status: 500 }
-    );
-  }
+export async function GET(request: NextRequest) {
+    const quotations = await getQuotations();
+    return NextResponse.json(quotations);
 }
 
-export async function POST(request: Request) {
-  try {
-    const data: QuotationFormData = await request.json();
-    const newQuotation = await quotationBLL.createQuotation(data);
+export async function POST(request: NextRequest) {
+    const quotationData = await request.json();
+    const newQuotation = await createQuotation(quotationData);
+    revalidatePath('/admin/quotations');
+    revalidatePath('/dashboard/quotations');
     return NextResponse.json(newQuotation, { status: 201 });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Failed to create quotation" },
-      { status: 500 }
-    );
-  }
 }

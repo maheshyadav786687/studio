@@ -52,7 +52,7 @@ const navItems = [
     subItems: [
       { href: "/admin/clients", icon: Users, label: "Clients" },
       { href: "/admin/sites", icon: Building2, label: "Sites" },
-      { href: "/admin/quotations", icon: FileText, label: "Quotes" },
+      { href: "/admin/quotations", icon: FileText, label: "Quotations" },
     ],
   },
   {

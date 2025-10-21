@@ -25,7 +25,7 @@ export async function findManySites(options: { page?: number, limit?: number, so
       where,
       include: {
         Client: true, // Include the related Client
-        _count: { select: { projects: true, quotations: true } },
+        _count: { select: { Projects: true, Quotations: true } },
       },
       orderBy: { [sortBy]: sortOrder },
       skip: (page - 1) * limit,
@@ -34,7 +34,13 @@ export async function findManySites(options: { page?: number, limit?: number, so
     prisma.site.count({ where }),
   ]);
 
-  return { sites, total };
+  const sitesWithClientData = sites.map(site => ({
+    ...site,
+    clientName: site.Client?.Name || 'N/A',
+    clientAddress: site.Client?.Address || '',
+  }));
+
+  return { sites: sitesWithClientData, total };
 }
 
 // DAL function to get a single site by its ID

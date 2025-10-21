@@ -1,56 +1,28 @@
 
-import { NextResponse } from "next/server";
-import * as quotationBLL from "@/lib/bll/quotation-bll";
-import { QuotationFormData } from "@/lib/types";
+import { NextRequest, NextResponse } from "next/server";
+import { getQuotationById, updateQuotation, deleteQuotation } from "@/lib/bll/quotation-bll";
+import { revalidatePath } from "next/cache";
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const quotation = await quotationBLL.getQuotation(params.id);
+export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
+    const quotation = await getQuotationById(params.id);
     if (!quotation) {
-      return NextResponse.json({ error: "Quotation not found" }, { status: 404 });
+        return NextResponse.json({ message: "Quotation not found" }, { status: 404 });
     }
-    return NextResponse.json(quotation, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Failed to fetch quotation" },
-      { status: 500 }
-    );
-  }
+    return NextResponse.json(quotation);
 }
 
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    const data: QuotationFormData = await request.json();
-    const updatedQuotation = await quotationBLL.updateQuotation(params.id, data);
-    return NextResponse.json(updatedQuotation, { status: 200 });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Failed to update quotation" },
-      { status: 500 }
-    );
-  }
+export async function PUT(request: NextRequest, { params }: { params: { id: string } }) {
+    const quotationData = await request.json();
+    const updatedQuotation = await updateQuotation(params.id, quotationData);
+    revalidatePath('/admin/quotations');
+    revalidatePath('/dashboard/quotations');
+    revalidatePath(`/admin/quotations/${params.id}`);
+    return NextResponse.json(updatedQuotation);
 }
 
-export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
-  try {
-    await quotationBLL.deleteQuotation(params.id);
-    return new Response(null, { status: 204 });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json(
-      { error: "Failed to delete quotation" },
-      { status: 500 }
-    );
-  }
+export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+    await deleteQuotation(params.id);
+    revalidatePath('/admin/quotations');
+    revalidatePath('/dashboard/quotations');
+    return NextResponse.json({ message: "Quotation deleted" }, { status: 200 });
 }

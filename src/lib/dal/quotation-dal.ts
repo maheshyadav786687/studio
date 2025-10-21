@@ -1,111 +1,121 @@
 
-import { prisma } from "@/lib/prisma";
-import { QuotationFormData } from "@/lib/types";
+// DAL (Data Access Layer) for Quotations
 
-const calculateAmounts = (items: any[]) => {
-    let totalAmount = 0;
-    const processedItems = items.map(item => {
-        const amount = item.Quantity * item.Rate;
-        totalAmount += amount;
-        return { ...item, Amount: amount }; 
-    });
-    return { processedItems, totalAmount };
-}
+import { prisma } from '@/lib/prisma';
+import type { Quotation, QuotationFormData } from '@/lib/types';
 
-export const getQuotations = async (page = 1, limit = 10, sortBy = 'CreatedOn', sortOrder = 'desc', search = '') => {
-    const where: any = search ? {
-        OR: [
-            { Description: { contains: search, mode: 'insensitive' } },
-            { Site: { Name: { contains: search, mode: 'insensitive' } } },
-            { Site: { Client: { Name: { contains: search, mode: 'insensitive' } } } },
-        ],
-    } : {};
+// This is a placeholder for the company ID. In a real application, this
+// would be retrieved from the user's session or authentication context.
+const COMPANY_ID = '49397632-3864-4c53-A227-2342879B5841'; // Hardcoded company ID
 
-    const [quotations, total] = await Promise.all([
-        prisma.quotation.findMany({
-            where,
-            include: {
-                Site: { include: { Client: true } }, // Include Client for searching
-            },
-            orderBy: { [sortBy]: sortOrder },
-            skip: (page - 1) * limit,
-            take: limit,
-        }),
-        prisma.quotation.count({ where }),
-    ]);
-
-    return { quotations, total };
-};
-
-export const getQuotation = async (id: string) => {
-  return await prisma.quotation.findUnique({
-    where: { Id: id },
+// DAL function to get all quotations
+export async function findManyQuotations(): Promise<Quotation[]> {
+  const quotations = await prisma.quotation.findMany({
     include: {
-      QuotationItems: true,
-      Site: true,
-    },
-  });
-};
-
-export const createQuotation = async (data: QuotationFormData) => {
-  const { items, ...quotationData } = data;
-  const { processedItems, totalAmount } = calculateAmounts(items || []);
-
-  return await prisma.quotation.create({
-    data: {
-      ...quotationData,
-      Amount: totalAmount,
-      QuotationItems: {
-        create: processedItems.map(item => ({
-          Description: item.Description,
-          Quantity: item.Quantity,
-          Rate: item.Rate,
-          UnitId: item.UnitId,
-          Area: item.Area,
-          IsWithMaterial: item.IsWithMaterial,
-          Amount: item.Amount
-        })),
+      Site: {
+        include: {
+            Client: true,
+        },
+      },
+      Project: true,
+      _count: {
+        select: { QuotationItems: true },
       },
     },
   });
-};
 
-export const updateQuotation = async (id: string, data: QuotationFormData) => {
-  const { items, ...quotationData } = data;
-  const { processedItems, totalAmount } = calculateAmounts(items || []);
+  return quotations.map(quotation => ({
+    ...quotation,
+    itemsCount: quotation._count.QuotationItems,
+  }));
+}
 
-
-  // Run in transaction to ensure data integrity
-  return await prisma.$transaction(async (tx) => {
-    await tx.quotationItem.deleteMany({
-        where: { QuotationId: id },
+// DAL function to get a single quotation by its ID
+export async function findQuotationById(id: string): Promise<Quotation | undefined> {
+    const quotation = await prisma.quotation.findUnique({
+        where: { Id: id },
+        include: {
+            Site: {
+                include: {
+                    Client: true,
+                },
+            },
+            Project: true,
+            QuotationItems: {
+                include: {
+                    Unit: true,
+                },
+            },
+        },
     });
 
-    const updatedQuotation = await tx.quotation.update({
-        where: { Id: id },
-        data: {
-          ...quotationData,
-          Amount: totalAmount,
-          QuotationItems: {
-            create: processedItems.map(item => ({
-              Description: item.Description,
-              Quantity: item.Quantity,
-              Rate: item.Rate,
-              UnitId: item.UnitId,
-              Area: item.Area,
-              IsWithMaterial: item.IsWithMaterial,
-              Amount: item.Amount
-            })),
-          },
-        },
-      });
+    if (quotation) {
+        return {
+            ...quotation,
+            items: quotation.QuotationItems,
+        };
+    }
+}
 
-      return updatedQuotation;
-  });
-};
+// DAL function to create a new quotation
+export async function createQuotation(quotationData: QuotationFormData): Promise<Quotation> {
+    const { items, ...quotation } = quotationData;
 
-export const deleteQuotation = async (id: string) => {
-  return await prisma.quotation.delete({
+    const createdQuotation = await prisma.$transaction(async (prisma) => {
+        const newQuotation = await prisma.quotation.create({
+            data: {
+                ...quotation,
+                CompanyId: COMPANY_ID,
+            },
+        });
+
+        if (items && items.length > 0) {
+            await prisma.quotationItem.createMany({
+                data: items.map(item => ({
+                    ...item,
+                    CompanyId: COMPANY_ID,
+                    QuotationId: newQuotation.Id,
+                })),
+            });
+        }
+
+        return newQuotation;
+    });
+
+    return findQuotationById(createdQuotation.Id);
+}
+
+// DAL function to update an existing quotation
+export async function updateQuotation(id: string, quotationData: Partial<QuotationFormData>): Promise<Quotation> {
+    const { items, ...quotation } = quotationData;
+
+    await prisma.$transaction(async (prisma) => {
+        await prisma.quotation.update({
+            where: { Id: id },
+            data: quotation,
+        });
+
+        if (items) {
+            await prisma.quotationItem.deleteMany({
+                where: { QuotationId: id },
+            });
+
+            await prisma.quotationItem.createMany({
+                data: items.map(item => ({
+                    ...item,
+                    CompanyId: COMPANY_ID,
+                    QuotationId: id,
+                })),
+            });
+        }
+    });
+
+    return findQuotationById(id);
+}
+
+// DAL function to delete a quotation
+export async function deleteQuotation(id: string): Promise<void> {
+  await prisma.quotation.delete({
     where: { Id: id },
   });
-};
+}

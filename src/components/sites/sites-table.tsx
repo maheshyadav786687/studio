@@ -186,7 +186,7 @@ export function SitesTable({ sites }: { sites: Site[] }) {
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex items-center justify-between py-4">
+        <div className="flex items-center justify-between">
           <Input
             placeholder="Filter sites by name..."
             value={(table.getColumn('Name')?.getFilterValue() as string) ?? ''}
@@ -216,7 +216,7 @@ export function SitesTable({ sites }: { sites: Site[] }) {
               </Select>
           </div>
         </div>
-        <div className="rounded-md border">
+        <div className="rounded-md border mt-4">
           <Table>
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
@@ -260,7 +260,7 @@ export function SitesTable({ sites }: { sites: Site[] }) {
             </TableBody>
           </Table>
         </div>
-        <div className="flex items-center justify-between pt-4">
+        <div className="flex items-center justify-between mt-4">
           <div className="flex-1 text-sm text-muted-foreground">
             {table.getFilteredSelectedRowModel().rows.length} of{" "}
             {table.getFilteredRowModel().rows.length} row(s) selected.

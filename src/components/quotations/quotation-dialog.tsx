@@ -1,64 +1,65 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useFieldArray, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { PlusCircle, Trash2 } from 'lucide-react';
-
+import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogFooter,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { Quotation, QuotationFormData, QuotationFormSchema, Unit, Site } from '@/lib/types';
-import { createQuotation, updateQuotation } from '@/lib/bll/quotation-bll';
-import { getUnits } from '@/lib/bll/unit-bll';
-import { getSites } from '@/lib/bll/site-bll';
-import { Textarea } from '../ui/textarea';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Trash2, PlusCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
-type QuotationDialogProps = {
+import type { Quotation, Site, Project, Unit } from '@/lib/types';
+
+const formSchema = z.object({
+  Description: z.string().min(1, 'Description is required'),
+  Amount: z.number().min(0, 'Amount must be a positive number'),
+  SiteId: z.string().min(1, 'Site is required'),
+  ProjectId: z.string().optional(),
+  items: z.array(
+    z.object({
+      Description: z.string().min(1, 'Item description is required'),
+      UnitId: z.string().min(1, 'Unit is required'),
+      Quantity: z.number().min(0.01, 'Quantity must be greater than 0'),
+      Price: z.number().min(0.01, 'Price must be greater than 0'),
+    })
+  ),
+});
+
+interface QuotationDialogProps {
   quotation?: Quotation;
   children: React.ReactNode;
-  onOpenChange?: (open: boolean) => void;
   open?: boolean;
-};
+  onOpenChange?: (open: boolean) => void;
+}
 
-export function QuotationDialog({ quotation, children, onOpenChange, open: parentOpen }: QuotationDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [sites, setSites] = useState<Site[]>([]);
-  const { toast } = useToast();
+export function QuotationDialog({ quotation, children, open, onOpenChange }: QuotationDialogProps) {
+  const [sites, setSites] = React.useState<Site[]>([]);
+  const [projects, setProjects] = React.useState<Project[]>([]);
+  const [units, setUnits] = React.useState<Unit[]>([]);
+
   const router = useRouter();
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-    reset,
-  } = useForm<QuotationFormData>({
-    resolver: zodResolver(QuotationFormSchema),
+  const { register, handleSubmit, control, reset, formState: { errors } } = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       Description: quotation?.Description || '',
+      Amount: quotation?.Amount || 0,
       SiteId: quotation?.SiteId || '',
-      items: quotation?.QuotationItems?.map(item => ({
-        Description: item.Description,
-        Quantity: item.Quantity,
-        UnitId: item.UnitId,
-        Rate: item.Rate,
-        Area: item.Area,
-        IsWithMaterial: item.IsWithMaterial,
-      })) || [],
+      ProjectId: quotation?.ProjectId || '',
+      items: quotation?.items || [],
     },
   });
 
@@ -67,152 +68,182 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
     name: 'items',
   });
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const [unitsData, sitesData] = await Promise.all([
-        getUnits(),
-        getSites({ all: true }), // Fetch all sites
+  React.useEffect(() => {
+    if (quotation) {
+      reset({
+        Description: quotation.Description,
+        Amount: quotation.Amount,
+        SiteId: quotation.SiteId,
+        ProjectId: quotation.ProjectId,
+        items: quotation.items || [],
+      });
+    } else {
+      reset({
+        Description: '',
+        Amount: 0,
+        SiteId: '',
+        ProjectId: '',
+        items: [],
+      });
+    }
+  }, [quotation, reset]);
+
+  React.useEffect(() => {
+    async function fetchData() {
+      const [sitesRes, projectsRes, unitsRes] = await Promise.all([
+        fetch('/api/sites'),
+        fetch('/api/projects'),
+        fetch('/api/units'),
       ]);
-      setUnits(unitsData.sites);
-      setSites(sitesData.sites);
-    };
+      const [sitesData, projectsData, unitsData] = await Promise.all([
+        sitesRes.json(),
+        projectsRes.json(),
+        unitsRes.json(),
+      ]);
+      setSites(sitesData);
+      setProjects(projectsData);
+      setUnits(unitsData);
+    }
     fetchData();
   }, []);
 
-  const handleOpenChange = (isOpen: boolean) => {
-    if (isOpen) {
-        reset({
-            Description: quotation?.Description || '',
-            SiteId: quotation?.SiteId || '',
-            items: quotation?.QuotationItems?.map(item => ({
-              Description: item.Description,
-              Quantity: item.Quantity,
-              UnitId: item.UnitId,
-              Rate: item.Rate,
-              Area: item.Area,
-              IsWithMaterial: item.IsWithMaterial,
-            })) || [],
-        });
-    } 
-    setOpen(isOpen);
-    if (onOpenChange) onOpenChange(isOpen);
-  };
-
-  const currentOpen = parentOpen !== undefined ? parentOpen : open;
-
-  async function onSubmit(data: QuotationFormData) {
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
-      if (quotation) {
-        await updateQuotation(quotation.Id, data);
-      } else {
-        await createQuotation(data);
+      const url = quotation ? `/api/quotations/${quotation.Id}` : '/api/quotations';
+      const method = quotation ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save quotation');
       }
 
-      toast({
-        title: 'Success',
-        description: `Quotation ${quotation ? 'updated' : 'saved'} successfully.`,
-      });
-
+      onOpenChange?.(false);
       router.refresh();
-      handleOpenChange(false);
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to save quotation.',
-        variant: 'destructive',
-      });
+    } catch (error) {
+      console.error(error);
     }
-  }
+  };
 
   return (
-    <Dialog open={currentOpen} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-4xl">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <DialogHeader>
-            <DialogTitle>{quotation ? 'Edit Quotation' : 'Add New Quotation'}</DialogTitle>
-            <DialogDescription>
-              {quotation ? 'Update the details for this quotation.' : 'Enter the details for the new quotation.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="SiteId">Site</Label>
-                    <select id="SiteId" {...register('SiteId')} className="w-full p-2 border rounded-md">
-                        <option value="">Select a site</option>
-                        {sites.map(site => (
-                            <option key={site.Id} value={site.Id}>{site.Name}</option>
-                        ))}
-                    </select>
-                    {errors.SiteId && <p className="text-xs text-red-500 mt-1">{errors.SiteId.message}</p>}
-                </div>
-                 <div>
-                    <Label htmlFor="Description">Description (Optional)</Label>
-                    <Textarea id="Description" {...register('Description')} />
-                    {errors.Description && <p className="text-xs text-red-500 mt-1">{errors.Description.message}</p>}
-                </div>
-            </div>
-
-            <div className="mt-6">
-                <div className="flex justify-between items-center mb-2">
-                    <h3 className="text-lg font-semibold">Quotation Items</h3>
-                    <Button 
-                        type="button" 
-                        size="sm"
-                        onClick={() => append({ Description: '', Quantity: 1, UnitId: '', Rate: 0, IsWithMaterial: false, Area: 0 })} >
-                        <PlusCircle className="h-4 w-4 mr-2"/> Add Item
-                    </Button>
-                </div>
-                <div className="grid gap-4">
-                    {fields.map((field, index) => (
-                        <div key={field.id} className="grid grid-cols-12 gap-2 items-start p-2 border rounded-md">
-                            <div className="col-span-4">
-                                <Label htmlFor={`items.${index}.Description`}>Description</Label>
-                                <Input {...register(`items.${index}.Description`)} />
-                            </div>
-                            <div>
-                                <Label htmlFor={`items.${index}.Quantity`}>Qty</Label>
-                                <Input type="number" {...register(`items.${index}.Quantity`, { valueAsNumber: true })} />
-                            </div>
-                            <div className="col-span-2">
-                                <Label htmlFor={`items.${index}.UnitId`}>Unit</Label>
-                                <select {...register(`items.${index}.UnitId`)} className="w-full p-2 border rounded-md">
-                                    <option value="">Select Unit</option>
-                                    {units.map(unit => (
-                                        <option key={unit.Id} value={unit.Id}>{unit.Name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <Label htmlFor={`items.${index}.Rate`}>Rate</Label>
-                                <Input type="number" {...register(`items.${index}.Rate`, { valueAsNumber: true })} />
-                            </div>
-                            <div>
-                                <Label htmlFor={`items.${index}.Area`}>Area</Label>
-                                <Input type="number" {...register(`items.${index}.Area`, { valueAsNumber: true })} />
-                            </div>
-                            <div className="flex items-end h-full">
-                                <div className="flex items-center">
-                                    <input type="checkbox" {...register(`items.${index}.IsWithMaterial`)} className="mr-2"/>
-                                    <Label htmlFor={`items.${index}.IsWithMaterial`}>With Material</Label>
-                                </div>
-                            </div>
-                            <div className="flex items-end h-full">
-                                <Button type="button" variant="destructive" size="sm" onClick={() => remove(index)}>
-                                    <Trash2 className="h-4 w-4"/>
-                                </Button>
-                            </div>
-                        </div>
-                    ))}
-                     {errors.items && <p className="text-xs text-red-500 mt-1">{errors.items.message}</p>}
-                </div>
-            </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+        {children}
+      <DialogContent className="sm:max-w-[600px]">
+        <DialogHeader>
+          <DialogTitle>{quotation ? 'Edit Quotation' : 'Add Quotation'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit(onSubmit)} className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="Description" className="text-right">
+              Description
+            </Label>
+            <Textarea id="Description" {...register('Description')} className="col-span-3" />
+            {errors.Description && <p className="col-span-4 text-red-500 text-xs">{errors.Description.message}</p>}
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save changes'}
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="Amount" className="text-right">
+              Amount
+            </Label>
+            <Input id="Amount" type="number" {...register('Amount', { valueAsNumber: true })} className="col-span-3" />
+            {errors.Amount && <p className="col-span-4 text-red-500 text-xs">{errors.Amount.message}</p>}
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="SiteId" className="text-right">
+              Site
+            </Label>
+            <Select {...register('SiteId')} >
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select a site" />
+              </SelectTrigger>
+              <SelectContent>
+                {sites.map((site) => (
+                  <SelectItem key={site.Id} value={site.Id}>
+                    {site.Name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.SiteId && <p className="col-span-4 text-red-500 text-xs">{errors.SiteId.message}</p>}
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="ProjectId" className="text-right">
+              Project
+            </Label>
+            <Select {...register('ProjectId')}>
+              <SelectTrigger className="col-span-3">
+                <SelectValue placeholder="Select a project" />
+              </SelectTrigger>
+              <SelectContent>
+                {projects.map((project) => (
+                  <SelectItem key={project.Id} value={project.Id}>
+                    {project.Name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="col-span-4">
+            <h3 className="text-lg font-medium">Items</h3>
+            <div className="grid gap-4 mt-2">
+              {fields.map((field, index) => (
+                <div key={field.id} className="grid grid-cols-12 gap-2 items-center">
+                  <div className="col-span-4">
+                    <Input {...register(`items.${index}.Description`)} placeholder="Description" />
+                  </div>
+                  <div className="col-span-2">
+                    <Select {...register(`items.${index}.UnitId`)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Unit" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {units.map((unit) => (
+                          <SelectItem key={unit.Id} value={unit.Id}>
+                            {unit.Name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="col-span-2">
+                    <Input type="number" {...register(`items.${index}.Quantity`, { valueAsNumber: true })} placeholder="Quantity" />
+                  </div>
+                  <div className="col-span-2">
+                    <Input type="number" {...register(`items.${index}.Price`, { valueAsNumber: true })} placeholder="Price" />
+                  </div>
+                  <div className="col-span-2 text-right">
+                    <Button variant="destructive" size="sm" onClick={() => remove(index)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => append({ Description: '', UnitId: '', Quantity: 0, Price: 0 })}
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Item
             </Button>
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button type="button" variant="secondary">
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button type="submit">Save</Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -1,23 +1,32 @@
 
-import * as quotationDAL from "@/lib/dal/quotation-dal";
-import { QuotationFormData } from "@/lib/types";
+// BLL for Quotations
 
-export const getQuotations = async (page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string) => {
-  return await quotationDAL.getQuotations(page, limit, sortBy, sortOrder, search);
-};
+import * as dal from '@/lib/dal/quotation-dal';
+import type { Quotation, QuotationFormData } from '@/lib/types';
 
-export const getQuotation = async (id: string) => {
-  return await quotationDAL.getQuotation(id);
-};
+// BLL function to get all quotations
+export async function getQuotations(): Promise<Quotation[]> {
+  const quotations = await dal.findManyQuotations();
 
-export const createQuotation = async (data: QuotationFormData) => {
-  return await quotationDAL.createQuotation(data);
-};
+  return quotations;
+}
 
-export const updateQuotation = async (id: string, data: QuotationFormData) => {
-  return await quotationDAL.updateQuotation(id, data);
-};
+// BLL function to get a single quotation by its ID
+export async function getQuotationById(id: string): Promise<Quotation | undefined> {
+    return dal.findQuotationById(id);
+}
 
-export const deleteQuotation = async (id: string) => {
-  return await quotationDAL.deleteQuotation(id);
-};
+// BLL function to create a new quotation
+export async function createQuotation(quotationData: QuotationFormData): Promise<Quotation> {
+    return dal.createQuotation(quotationData);
+}
+
+// BLL function to update an existing quotation
+export async function updateQuotation(id: string, quotationData: Partial<QuotationFormData>): Promise<Quotation> {
+    return dal.updateQuotation(id, quotationData);
+}
+
+// BLL function to delete a quotation
+export async function deleteQuotation(id: string): Promise<void> {
+  await dal.deleteQuotation(id);
+}
