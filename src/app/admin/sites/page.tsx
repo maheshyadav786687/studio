@@ -6,6 +6,8 @@ import type { Site } from "@/lib/types";
 import { getSites as fetchSitesFromBll } from "@/lib/bll/site-bll";
 import { SiteDialog } from "@/components/sites/site-dialog";
 
+export const revalidate = 0;
+
 async function getSites(): Promise<Site[]> {
   try {
     const { sites } = await fetchSitesFromBll();

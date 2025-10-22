@@ -1,67 +1,27 @@
 
-// BLL (Business Logic Layer) for Sites
-'use server';
+// BLL for Sites
 
-import {
-    findManySites,
-    createSite as createDbSite,
-    updateSite as updateDbSite,
-    deleteSite as deleteDbSite,
-    findManySitesGroupedByClient as findManySitesGroupedByClientDb
-} from '@/lib/dal/site-dal';
-import { findClientById } from '@/lib/dal/client-dal';
+import { findManySites, findSiteById, createSite as createSiteDal, updateSite as updateSiteDal, deleteSite as deleteSiteDal } from '@/lib/dal/site-dal';
 import type { Site, SiteFormData } from '@/lib/types';
 
-// DTO for creating a new site, based on the consolidated SiteFormData type.
-export type SiteCreateDto = SiteFormData;
-
-// DTO for updating an existing site, where all fields are optional.
-export type SiteUpdateDto = Partial<SiteCreateDto>;
-
-// BLL function to get all sites.
-export async function getSites(options: { page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string, all?: boolean } = {}) {
+export async function getSites(options: { page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string, all?: boolean } = {}): Promise<{ sites: Site[], total: number }> {
   const result = await findManySites(options);
-  return result.sites; // Extract the sites array
+  // Ensure that 'sites' is always an array, even if result is not as expected.
+  return result || { sites: [], total: 0 };
 }
 
-// BLL function to get sites grouped by their respective clients.
-export async function getSitesGroupedByClient() {
-    // This function is useful for UI elements like dropdowns where sites are organized by client.
-    return await findManySitesGroupedByClientDb();
+export function getSiteById(id: string): Promise<Site | null> {
+  return findSiteById(id);
 }
 
-// BLL function to create a new site.
-export async function createSite(siteDto: SiteCreateDto): Promise<Site> {
-  // Before creating a site, we validate that the provided client ID is valid.
-  const client = await findClientById(siteDto.ClientId);
-  if (!client) {
-    throw new Error('Invalid client ID provided.');
-  }
-  
-  // Calls the data access layer to create the site.
-  const newSite = await createDbSite(siteDto);
-  return newSite;
+export function createSite(siteData: SiteFormData): Promise<Site> {
+  return createSiteDal(siteData);
 }
 
-// BLL function to update an existing site.
-export async function updateSite(id: string, siteDto: SiteUpdateDto): Promise<Site | undefined> {
-  // If a new client ID is provided, we validate it before updating.
-  if (siteDto.ClientId) {
-      const client = await findClientById(siteDto.ClientId);
-      if (!client) {
-          throw new Error('Invalid client ID provided.');
-      }
-  }
-  
-  // Calls the data access layer to update the site.
-  const updatedSite = await updateDbSite(id, siteDto);
-  return updatedSite;
+export function updateSite(id: string, siteData: SiteFormData): Promise<Site> {
+  return updateSiteDal(id, siteData);
 }
 
-// BLL function to delete a site.
-export async function deleteSite(id: string): Promise<void> {
-  // Business logic can be added here, like checking for active projects on the site before deletion.
-  
-  // Calls the data access layer to delete the site.
-  await deleteDbSite(id);
+export function deleteSite(id: string): Promise<void> {
+  return deleteSiteDal(id);
 }

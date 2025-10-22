@@ -65,17 +65,16 @@ export const columns: ColumnDef<Site>[] = [
     accessorKey: 'Address',
     header: "Address",
     cell: ({ row }) => {
-        const site = row.original
+        const site = row.original;
         return (
           <div>
-            <div>{site.Address}</div>
-            <div className="text-sm text-muted-foreground">{site.clientAddress}</div>
+            <div>{site.Location}</div>
           </div>
-        )
+        );
       },
   },
   {
-    accessorKey: 'clientName',
+    accessorKey: 'Client.Name',
     header: ({ column }) => {
         return (
           <Button
@@ -87,7 +86,10 @@ export const columns: ColumnDef<Site>[] = [
           </Button>
         );
       },
-      cell: ({ row }) => <div className="pl-4">{row.getValue("clientName")}</div>,
+      cell: ({ row }) => {
+        const site = row.original;
+        return <div className="pl-4">{site.Client?.Name || 'N/A'}</div>;
+      },
   },
   {
     id: 'counts',

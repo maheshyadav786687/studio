@@ -193,7 +193,7 @@ export const QuotationSchema = z.object({
   QuotationDate: z.date(),
   Description: z.string().min(5, 'Description must be at least 5 characters.').nullable(),
   TotalAmount: z.number().default(0),
-  SiteId: z.string({ required_error: 'Site is required.' }),
+  SiteId: z.string({ required_error: 'Site is required.' }).nullable(),
   CompanyId: z.string(),
   StatusId: z.string().nullable(),
   Site: SiteSchema.optional(),

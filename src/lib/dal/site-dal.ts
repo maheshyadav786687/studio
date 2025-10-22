@@ -1,5 +1,5 @@
 
-// DAL (Data Access Layer) for Sites
+// DAL for Sites
 
 import { prisma } from '@/lib/prisma';
 import type { Site, SiteFormData } from '@/lib/types';
@@ -8,24 +8,45 @@ import type { Site, SiteFormData } from '@/lib/types';
 // would be retrieved from the user's session or authentication context.
 const COMPANY_ID = '49397632-3864-4c53-A227-2342879B5841'; // Hardcoded company ID
 
+const includeRelations = {
+  Client: true,
+  _count: {
+    select: { 
+      Projects: true, 
+      Quotations: true 
+    },
+  },
+};
+
+// Helper to transform site data
+function transformSite(site: any): Site {
+  return {
+    ...site,
+    ClientId: site.Client?.Id || null,
+    clientName: site.Client?.Name || 'N/A',
+    projectsCount: site._count?.Projects ?? 0,
+    quotationsCount: site._count?.Quotations ?? 0,
+  };
+}
+
 // DAL function to get all sites
-export async function findManySites(options: { page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string, all?: boolean } = {}) {
+export async function findManySites(options: { page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string, all?: boolean } = {}): Promise<{ sites: Site[], total: number }> {
   const { page = 1, limit = 10, sortBy = 'Name', sortOrder = 'asc', search = '', all = false } = options;
 
-  const where: any = search ? {
-    OR: [
-      { Name: { contains: search, mode: 'insensitive' } },
-      { Location: { contains: search, mode: 'insensitive' } },
-      { Client: { Name: { contains: search, mode: 'insensitive' } } },
-    ],
-  } : {};
+  const where: any = {
+    CompanyId: COMPANY_ID,
+    ...(search && {
+      OR: [
+        { Name: { contains: search, mode: 'insensitive' } },
+        { Location: { contains: search, mode: 'insensitive' } },
+        { Client: { Name: { contains: search, mode: 'insensitive' } } },
+      ],
+    }),
+  };
 
   const findOptions: any = {
     where,
-    include: {
-      Client: true, // Include the related Client
-      _count: { select: { Projects: true, Quotations: true } },
-    },
+    include: includeRelations,
     orderBy: { [sortBy]: sortOrder },
   };
 
@@ -39,65 +60,45 @@ export async function findManySites(options: { page?: number, limit?: number, so
     prisma.site.count({ where }),
   ]);
 
-  const sitesWithClientData = sites.map(site => ({
-    ...site,
-    clientName: site.Client?.Name || 'N/A',
-    clientAddress: site.Client?.Address || '',
-  }));
-
-  return { sites: sitesWithClientData, total };
+  return { sites: sites.map(transformSite), total };
 }
 
 // DAL function to get a single site by its ID
 export async function findSiteById(id: string): Promise<Site | null> {
-    const site = await prisma.site.findUnique({
-        where: { Id: id },
-        include: {
-          Client: true, // Include the related Client
-        },
-    });
+  const site = await prisma.site.findUnique({
+    where: { Id: id, CompanyId: COMPANY_ID },
+    include: includeRelations,
+  });
 
-    if (site) {
-        return {
-            ...site,
-            clientName: site.Client?.Name || 'N/A',
-            clientAddress: site.Client?.Address || '',
-        };
-    }
-    return null;
-}
-
-// DAL function to get sites grouped by their respective clients
-export async function findManySitesGroupedByClient() {
-    const clients = await prisma.client.findMany({
-        include: {
-            Sites: true,
-        },
-    });
-    return clients.map(client => ({
-        clientName: client.Name,
-        sites: client.Sites.map(site => ({ id: site.Id, name: site.Name }))
-    }));
+  return site ? transformSite(site) : null;
 }
 
 // DAL function to create a new site
 export async function createSite(siteData: SiteFormData): Promise<Site> {
-  const site = await prisma.site.create({
+  const created = await prisma.site.create({
     data: {
-        ...siteData,
-        CompanyId: COMPANY_ID,
+      ...siteData,
+      CompanyId: COMPANY_ID,
     },
   });
-  return site;
+  const newSite = await findSiteById(created.Id);
+  if (!newSite) {
+    throw new Error('Failed to create or find site');
+  }
+  return newSite;
 }
 
 // DAL function to update an existing site
 export async function updateSite(id: string, siteData: Partial<SiteFormData>): Promise<Site> {
-  const site = await prisma.site.update({
+  await prisma.site.update({
     where: { Id: id },
     data: siteData,
   });
-  return site;
+  const updatedSite = await findSiteById(id);
+  if (!updatedSite) {
+    throw new Error('Failed to update or find site');
+  }
+  return updatedSite;
 }
 
 // DAL function to delete a site

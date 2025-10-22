@@ -8,26 +8,46 @@ import type { Quotation, QuotationFormData } from '@/lib/types';
 // would be retrieved from the user's session or authentication context.
 const COMPANY_ID = '49397632-3864-4c53-A227-2342879B5841'; // Hardcoded company ID
 
+const includeRelations = {
+  Project: true,
+  Site: { include: { Client: true } },
+  Status: true,
+  QuotationItems: true,
+};
+
+// Helper to transform quotation data
+function transformQuotation(quotation: any): Quotation {
+  return {
+    ...quotation,
+    QuotationDate: new Date(quotation.QuotationDate),
+    projectName: quotation.Project?.Name || 'N/A',
+    siteName: quotation.Site?.Name || 'N/A',
+    statusName: quotation.Status?.Name || 'N/A',
+    statusColor: quotation.Status?.Color || 'gray',
+  };
+}
+
+
 // DAL function to get all quotations
 export async function findManyQuotations(options: { page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string, all?: boolean } = {}) {
   const { page = 1, limit = 10, sortBy = 'Title', sortOrder = 'asc', search = '', all = false } = options;
 
-  const where: any = search ? {
-    OR: [
-      { Title: { contains: search, mode: 'insensitive' } },
-      { Description: { contains: search, mode: 'insensitive' } },
-      { Project: { Name: { contains: search, mode: 'insensitive' } } },
-      { Site: { Name: { contains: search, mode: 'insensitive' } } },
-    ],
-  } : {};
+  const where: any = {
+    CompanyId: COMPANY_ID,
+    ...(search && {
+      OR: [
+        { Title: { contains: search, mode: 'insensitive' } },
+        { Description: { contains: search, mode: 'insensitive' } },
+        { Project: { Name: { contains: search, mode: 'insensitive' } } },
+        { Site: { Name: { contains: search, mode: 'insensitive' } } },
+        { Site: { Client: { Name: { contains: search, mode: 'insensitive' } } } },
+      ],
+    }),
+  };
 
   const findOptions: any = {
     where,
-    include: {
-      Project: true, // Include the related Project
-      Site: true,
-      Status: true,
-    },
+    include: includeRelations,
     orderBy: { [sortBy]: sortOrder },
   };
 
@@ -41,37 +61,18 @@ export async function findManyQuotations(options: { page?: number, limit?: numbe
     prisma.quotation.count({ where }),
   ]);
 
-  const quotationsWithProjectData = quotations.map(quotation => ({
-    ...quotation,
-    projectName: quotation.Project?.Name || 'N/A',
-    siteName: quotation.Site?.Name || 'N/A',
-    statusName: quotation.Status?.Name || 'N/A',
-    statusColor: quotation.Status?.Color || 'gray',
-  }));
-
-  return { quotations: quotationsWithProjectData, total };
+  return { quotations: quotations.map(transformQuotation), total };
 }
 
 // DAL function to get a single quotation by its ID
 export async function findQuotationById(id: string): Promise<Quotation | null> {
     const quotation = await prisma.quotation.findUnique({
-        where: { Id: id },
-        include: {
-          Project: true, // Include the related Project
-          Site: true, // Include the related Site
-          Status: true,
-          QuotationItems: true, // Include the related QuotationItems
-        },
+        where: { Id: id, CompanyId: COMPANY_ID },
+        include: includeRelations,
     });
 
     if (quotation) {
-        return {
-            ...quotation,
-            projectName: quotation.Project?.Name || 'N/A',
-            siteName: quotation.Site?.Name || 'N/A',
-            statusName: quotation.Status?.Name || 'N/A',
-            statusColor: quotation.Status?.Color || 'gray',
-        };
+        return transformQuotation(quotation);
     }
     return null;
 }
@@ -79,7 +80,7 @@ export async function findQuotationById(id: string): Promise<Quotation | null> {
 // DAL function to create a new quotation
 export async function createQuotation(quotationData: QuotationFormData): Promise<Quotation> {
   const { quotationItems, ...restOfQuotationData } = quotationData;
-  const quotation = await prisma.quotation.create({
+  const created = await prisma.quotation.create({
     data: {
       ...restOfQuotationData,
       CompanyId: COMPANY_ID,
@@ -93,13 +94,19 @@ export async function createQuotation(quotationData: QuotationFormData): Promise
       }),
     },
   });
-  return quotation;
+  
+  // Re-fetch the quotation to include all relations
+  const newQuotation = await findQuotationById(created.Id);
+  if (!newQuotation) {
+    throw new Error('Failed to create or find quotation');
+  }
+  return newQuotation;
 }
 
 // DAL function to update an existing quotation
 export async function updateQuotation(id: string, quotationData: Partial<QuotationFormData>): Promise<Quotation> {
   const { quotationItems, ...restOfQuotationData } = quotationData;
-  const quotation = await prisma.quotation.update({
+  await prisma.quotation.update({
     where: { Id: id },
     data: {
       ...restOfQuotationData,
@@ -114,7 +121,13 @@ export async function updateQuotation(id: string, quotationData: Partial<Quotati
       }),
     },
   });
-  return quotation;
+  
+  // Re-fetch the quotation to include all relations
+  const updatedQuotation = await findQuotationById(id);
+  if (!updatedQuotation) {
+    throw new Error('Failed to update or find quotation');
+  }
+  return updatedQuotation;
 }
 
 // DAL function to delete a quotation
