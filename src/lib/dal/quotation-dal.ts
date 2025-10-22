@@ -52,6 +52,8 @@ export async function findQuotationById(id: string): Promise<Quotation | null> {
         where: { Id: id },
         include: {
           Project: true, // Include the related Project
+          Site: true, // Include the related Site
+          QuotationItems: true, // Include the related QuotationItems
         },
     });
 

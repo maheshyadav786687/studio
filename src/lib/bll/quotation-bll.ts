@@ -4,6 +4,7 @@
 
 import {
     findManyQuotations,
+    findQuotationById,
     createQuotation as createDbQuotation,
     updateQuotation as updateDbQuotation,
     deleteQuotation as deleteDbQuotation
@@ -19,6 +20,11 @@ export type QuotationUpdateDto = Partial<QuotationCreateDto>;
 // BLL function to get all quotations.
 export async function getQuotations(options: { page?: number, limit?: number, sortBy?: string, sortOrder?: string, search?: string, all?: boolean } = {}) {
   return await findManyQuotations(options);
+}
+
+// BLL function to get a single quotation by ID.
+export async function getQuotationById(id: string): Promise<Quotation | null> {
+    return await findQuotationById(id);
 }
 
 // BLL function to create a new quotation.

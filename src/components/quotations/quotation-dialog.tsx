@@ -31,7 +31,7 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Quotation, QuotationFormData, QuotationFormSchema, Site, Unit } from '@/lib/types';
-import { createQuotation, updateQuotation } from '@/lib/bll/quotation-bll';
+import { createQuotation, updateQuotation, getQuotationById } from '@/lib/bll/quotation-bll';
 import { getSites } from '@/lib/bll/site-bll';
 import { getUnits } from '@/lib/bll/unit-bll';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -110,15 +110,26 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
           setSites(sitesData);
           setUnits(unitsData);
 
-          const defaultItems = quotation?.quotationItems?.length
-            ? quotation.quotationItems
+          let currentQuotation = quotation;
+          if (quotation?.Id) {
+            const fullQuotation = await getQuotationById(quotation.Id);
+            if (fullQuotation) {
+              currentQuotation = fullQuotation;
+            } else {
+              toast({ title: 'Error', description: 'Failed to load quotation details.', variant: 'destructive' });
+              return;
+            }
+          }
+
+          const defaultItems = currentQuotation?.QuotationItems?.length
+            ? currentQuotation.QuotationItems
             : [{ Description: '', Quantity: 1, Rate: 0, AreaPerQuantity: 1, IsWithMaterial: false, UnitId: '' }];
 
           reset({
-            Title: quotation?.Title || '',
-            Description: quotation?.Description || '',
-            SiteId: quotation?.SiteId || '',
-            QuotationDate: quotation?.QuotationDate ? new Date(quotation.QuotationDate) : new Date(),
+            Title: currentQuotation?.Title || '',
+            Description: currentQuotation?.Description || '',
+            SiteId: currentQuotation?.SiteId || '',
+            QuotationDate: currentQuotation?.QuotationDate ? new Date(currentQuotation.QuotationDate) : new Date(),
             quotationItems: defaultItems,
           });
 
