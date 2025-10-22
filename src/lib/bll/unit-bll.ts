@@ -1,6 +1,10 @@
 
-import * as unitDAL from "@/lib/dal/unit-dal";
+// BLL (Business Logic Layer) for Units
+'use server';
 
-export const getUnits = async () => {
-  return await unitDAL.getUnits();
-};
+import { findManyUnits } from '@/lib/dal/unit-dal';
+
+// BLL function to get all units.
+export async function getUnits() {
+  return await findManyUnits();
+}

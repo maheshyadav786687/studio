@@ -93,60 +93,6 @@ export const SiteFormSchema = SiteSchema.omit({
 });
 export type SiteFormData = z.infer<typeof SiteFormSchema>;
 
-
-//============================================================================
-// QUOTATION
-//============================================================================
-
-const QuotationItemObjectSchema = z.object({
-  Id: z.string(),
-  QuotationId: z.string(),
-  Description: z.string().min(1, 'Description is required.'),
-  Quantity: z.number().min(0, 'Quantity must be positive.'),
-  UnitId: z.string(),
-  Rate: z.number().min(0, 'Rate must be positive.'),
-  Amount: z.number(), // This maps to TotalAmount in the DB
-  Area: z.number().min(0, 'Area must be positive.').optional(),
-  IsWithMaterial: z.boolean(),
-});
-
-export const QuotationItemSchema = QuotationItemObjectSchema.transform((data) => ({
-  ...data,
-  Amount: data.Amount, // Keep amount for compatibility
-}));
-export type QuotationItem = z.infer<typeof QuotationItemSchema>;
-
-export const QuotationSchema = z.object({
-  Id: z.string(),
-  Amount: z.number(),
-  Description: z.string().nullable(),
-  SiteId: z.string().nullable(),
-  ClientId: z.string(),
-  CompanyId: z.string(),
-  StatusId: z.string().nullable(),
-  CreatedOn: z.date(),
-  CreatedBy: z.string().nullable(),
-  ModifiedOn: z.date().optional().nullable(),
-  ModifiedBy: z.string().optional().nullable(),
-  Project: z.any().optional(), // Using any to bypass ProjectSchema issues for now
-  Client: ClientSchema.optional(),
-  Status: StatusSchema.optional(),
-  Site: SiteSchema.optional(),
-  QuotationItems: z.array(QuotationItemSchema).optional(),
-});
-export type Quotation = z.infer<typeof QuotationSchema>;
-  
-const QuotationItemFormSchema = QuotationItemObjectSchema.omit({ Id: true, QuotationId: true });
-
-export const QuotationFormSchema = z.object({
-    Description: z.string().optional(),
-    SiteId: z.string({ required_error: 'Site is required.' }),
-    ClientId: z.string({ required_error: 'Client is required.' }),
-    Amount: z.number({ required_error: 'Amount is required.' }),
-    items: z.array(QuotationItemFormSchema).optional(),
-});
-export type QuotationFormData = z.infer<typeof QuotationFormSchema>;
-
 //============================================================================
 // PROJECT
 //============================================================================
@@ -197,5 +143,69 @@ export const ProjectSchema = z.object({
   EndDate: z.string().nullable(),
   tasks: z.array(TaskSchema).optional(),
   updates: z.array(ProjectUpdateSchema).optional(),
+  quotationsCount: z.number().int().optional(),
 });
 export type Project = z.infer<typeof ProjectSchema>;
+
+//============================================================================
+// QUOTATION ITEM
+//============================================================================
+
+export const QuotationItemSchema = z.object({
+    Id: z.string(),
+    Description: z.string().min(2, 'Description must be at least 2 characters.'),
+    Quantity: z.number().default(1),
+    AreaPerQuantity: z.number().default(0),
+    Rate: z.number().default(0),
+    TotalAmount: z.number(),
+    IsWithMaterial: z.boolean().default(false),
+    UnitId: z.string().nullable(),
+    QuotationId: z.string(),
+    CompanyId: z.string(),
+    StatusId: z.string().nullable(),
+});
+export type QuotationItem = z.infer<typeof QuotationItemSchema>;
+
+export const QuotationItemFormSchema = QuotationItemSchema.pick({
+    Description: true,
+    Quantity: true,
+    Rate: true,
+    AreaPerQuantity: true,
+    IsWithMaterial: true,
+    UnitId: true,
+}).extend({
+    Description: z.string().min(2, 'Description must be at least 2 characters.'),
+    Quantity: z.coerce.number().default(1),
+    Rate: z.coerce.number().default(0),
+    AreaPerQuantity: z.coerce.number().default(0),
+});
+export type QuotationItemFormData = z.infer<typeof QuotationItemFormSchema>;
+
+
+//============================================================================
+// QUOTATION
+//============================================================================
+
+export const QuotationSchema = z.object({
+  Id: z.string(),
+  Title: z.string().min(2, 'Title must be at least 2 characters.'),
+  QuotationDate: z.date(),
+  Description: z.string().min(5, 'Description must be at least 5 characters.').nullable(),
+  TotalAmount: z.number().default(0),
+  SiteId: z.string({ required_error: 'Site is required.' }),
+  CompanyId: z.string(),
+  StatusId: z.string().nullable(),
+  Site: SiteSchema.optional(),
+  quotationItems: z.array(QuotationItemSchema).optional(),
+});
+export type Quotation = z.infer<typeof QuotationSchema>;
+
+export const QuotationFormSchema = QuotationSchema.pick({
+    Title: true,
+    Description: true,
+    SiteId: true,
+    QuotationDate: true,
+}).extend({
+    quotationItems: z.array(QuotationItemFormSchema).optional()
+});
+export type QuotationFormData = z.infer<typeof QuotationFormSchema>;

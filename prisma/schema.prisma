@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -143,23 +144,22 @@ model Client {
   Status        Status?     @relation(fields: [StatusId], references: [Id])
   Sites         Site[]
   Projects      Project[]
-  Quotations    Quotation[]
 }
 
 model Site {
-  Id          String      @id @default(uuid())
+  Id          String    @id @default(uuid())
   CompanyId   String
   ClientId    String
   Name        String
   Location    String?
   StatusId    String?
   CreatedBy   String?
-  CreatedOn   DateTime    @default(now())
+  CreatedOn   DateTime  @default(now())
   ModifiedBy  String?
-  ModifiedOn  DateTime?   @updatedAt
-  Company     Company     @relation(fields: [CompanyId], references: [Id])
-  Client      Client      @relation(fields: [ClientId], references: [Id])
-  Status      Status?     @relation(fields: [StatusId], references: [Id])
+  ModifiedOn  DateTime? @updatedAt
+  Company     Company   @relation(fields: [CompanyId], references: [Id])
+  Client      Client    @relation(fields: [ClientId], references: [Id])
+  Status      Status?   @relation(fields: [StatusId], references: [Id])
   Projects    Project[]
   Quotations  Quotation[]
 }
@@ -186,44 +186,44 @@ model Project {
 }
 
 model Quotation {
-  Id             String          @id @default(uuid())
-  CompanyId      String
-  ClientId       String
-  SiteId         String?
-  ProjectId      String?
-  Amount         Float
-  Description    String?
-  StatusId       String?
-  CreatedBy      String?
-  CreatedOn      DateTime        @default(now())
-  ModifiedBy     String?
-  ModifiedOn     DateTime?       @updatedAt
-  Company        Company         @relation(fields: [CompanyId], references: [Id])
-  Client         Client          @relation(fields: [ClientId], references: [Id])
-  Site           Site?           @relation(fields: [SiteId], references: [Id])
-  Project        Project?        @relation(fields: [ProjectId], references: [Id])
-  Status         Status?         @relation(fields: [StatusId], references: [Id])
+  Id            String          @id @default(uuid())
+  CompanyId     String
+  ProjectId     String?
+  SiteId        String?
+  QuotationDate DateTime        @default(now())
+  Title         String          @default("")
+  Description   String?
+  TotalAmount   Float           @default(0)
+  StatusId      String?
+  CreatedBy     String?
+  CreatedOn     DateTime        @default(now())
+  ModifiedBy    String?
+  ModifiedOn    DateTime?       @updatedAt
+  Company       Company         @relation(fields: [CompanyId], references: [Id])
+  Project       Project?        @relation(fields: [ProjectId], references: [Id])
+  Site          Site?           @relation(fields: [SiteId], references: [Id])
+  Status        Status?         @relation(fields: [StatusId], references: [Id])
   QuotationItems QuotationItem[]
 }
 
 model QuotationItem {
-  Id             String    @id @default(uuid())
-  CompanyId      String
-  QuotationId    String
-  Description    String
-  IsWithMaterial Boolean?  @default(false)
-  Quantity       Float?    @default(0)
-  UnitId         String?
-  Area           Float?
-  Rate           Float?    @default(0)
-  TotalAmount    Float?
-  StatusId       String?
-  CreatedBy      String?
-  CreatedOn      DateTime  @default(now())
-  ModifiedBy     String?
-  ModifiedOn     DateTime? @updatedAt
-  Company        Company   @relation(fields: [CompanyId], references: [Id])
-  Quotation      Quotation @relation(fields: [QuotationId], references: [Id])
-  Unit           Unit?     @relation(fields: [UnitId], references: [Id])
-  Status         Status?   @relation(fields: [StatusId], references: [Id])
+  Id              String    @id @default(uuid())
+  CompanyId       String
+  QuotationId     String
+  Description     String
+  IsWithMaterial  Boolean   @default(false)
+  Quantity        Float     @default(1)
+  AreaPerQuantity Float     @default(0)
+  UnitId          String?
+  Rate            Float     @default(0)
+  TotalAmount     Float     @default(0)
+  StatusId        String?
+  CreatedBy       String?
+  CreatedOn       DateTime  @default(now())
+  ModifiedBy      String?
+  ModifiedOn      DateTime? @updatedAt
+  Company         Company   @relation(fields: [CompanyId], references: [Id])
+  Quotation       Quotation @relation(fields: [QuotationId], references: [Id])
+  Unit            Unit?     @relation(fields: [UnitId], references: [Id])
+  Status          Status?   @relation(fields: [StatusId], references: [Id])
 }

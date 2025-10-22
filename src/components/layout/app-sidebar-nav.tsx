@@ -59,6 +59,7 @@ const navItems = [
     icon: Briefcase,
     subItems: [
       { href: "/admin/projects", icon: Briefcase, label: "Projects" },
+      { href: "/admin/quotations", icon: FileSignature, label: "Quotations" },
       { href: "#", icon: ClipboardList, label: "Tasks" },
       { href: "#", icon: CheckCircle, label: "Subtasks" },
       { href: "#", icon: FileText, label: "Daily Logs" },
