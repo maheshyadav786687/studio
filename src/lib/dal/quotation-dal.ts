@@ -17,6 +17,7 @@ export async function findManyQuotations(options: { page?: number, limit?: numbe
       { Title: { contains: search, mode: 'insensitive' } },
       { Description: { contains: search, mode: 'insensitive' } },
       { Project: { Name: { contains: search, mode: 'insensitive' } } },
+      { Site: { Name: { contains: search, mode: 'insensitive' } } },
     ],
   } : {};
 
@@ -24,6 +25,8 @@ export async function findManyQuotations(options: { page?: number, limit?: numbe
     where,
     include: {
       Project: true, // Include the related Project
+      Site: true,
+      Status: true,
     },
     orderBy: { [sortBy]: sortOrder },
   };
@@ -41,6 +44,9 @@ export async function findManyQuotations(options: { page?: number, limit?: numbe
   const quotationsWithProjectData = quotations.map(quotation => ({
     ...quotation,
     projectName: quotation.Project?.Name || 'N/A',
+    siteName: quotation.Site?.Name || 'N/A',
+    statusName: quotation.Status?.Name || 'N/A',
+    statusColor: quotation.Status?.Color || 'gray',
   }));
 
   return { quotations: quotationsWithProjectData, total };
@@ -53,6 +59,7 @@ export async function findQuotationById(id: string): Promise<Quotation | null> {
         include: {
           Project: true, // Include the related Project
           Site: true, // Include the related Site
+          Status: true,
           QuotationItems: true, // Include the related QuotationItems
         },
     });
@@ -61,6 +68,9 @@ export async function findQuotationById(id: string): Promise<Quotation | null> {
         return {
             ...quotation,
             projectName: quotation.Project?.Name || 'N/A',
+            siteName: quotation.Site?.Name || 'N/A',
+            statusName: quotation.Status?.Name || 'N/A',
+            statusColor: quotation.Status?.Color || 'gray',
         };
     }
     return null;

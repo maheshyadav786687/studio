@@ -177,7 +177,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
     <Dialog open={currentOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent
-        className="sm:max-w-6xl h-[90vh] flex flex-col"
+        className="sm:max-w-6xl h-[90vh] flex flex-col bg-white"
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement;
           if (target.closest('[data-radix-select-content]') || target.closest('[data-radix-popover-content]')) {
@@ -206,7 +206,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                       <PopoverTrigger asChild>
                         <Button
                           variant={'outline'}
-                          className={cn('w-full h-10 justify-start text-left font-normal', !field.value && 'text-muted-foreground')}
+                          className={cn('w-full h-10 justify-start text-left font-normal bg-gray-200 border', !field.value && 'text-muted-foreground')}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
                           {field.value ? format(new Date(field.value), 'PPP') : <span>Pick a date</span>}
@@ -222,7 +222,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
               </div>
               <div>
                 <Label htmlFor="Title">Title</Label>
-                <Input id="Title" {...register('Title')} className="h-10" />
+                <Input id="Title" {...register('Title')} className="h-10 bg-gray-200 border" />
                 {errors.Title && <p className="text-xs text-red-500 mt-1">{errors.Title.message}</p>}
               </div>
             </div>
@@ -234,7 +234,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                     name="SiteId"
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value || ''}>
-                        <SelectTrigger className="h-10">
+                        <SelectTrigger className="h-10 bg-gray-200 border">
                           <SelectValue placeholder="Select a site" />
                         </SelectTrigger>
                         <SelectContent>
@@ -255,7 +255,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
             </div>
             <div>
               <Label htmlFor="Description">Description</Label>
-              <Textarea id="Description" {...register('Description')} rows={3} />
+              <Textarea id="Description" {...register('Description')} rows={3} className="bg-gray-200 border" />
               {errors.Description && <p className="text-xs text-red-500 mt-1">{errors.Description.message}</p>}
             </div>
 
@@ -296,7 +296,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                       return (
                         <TableRow key={item.id} className="hover:bg-muted/50">
                           <TableCell className="p-1 align-top">
-                            <Textarea {...register(`quotationItems.${index}.Description`)} placeholder="Item description" className="h-10 text-xs min-h-[40px]"/>
+                            <Textarea {...register(`quotationItems.${index}.Description`)} placeholder="Item description" className="h-10 text-xs min-h-[40px] bg-gray-200 border"/>
                           </TableCell>
                           <TableCell className="p-1 align-middle text-center">
                             <Controller
@@ -306,10 +306,10 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                             />
                           </TableCell>
                           <TableCell className="p-1 align-top">
-                            <Input {...register(`quotationItems.${index}.Quantity`, { valueAsNumber: true })} type="number" placeholder="Qty" className="h-10 text-xs" />
+                            <Input {...register(`quotationItems.${index}.Quantity`, { valueAsNumber: true })} type="number" placeholder="Qty" className="h-10 text-xs bg-gray-200 border" />
                           </TableCell>
                           <TableCell className="p-1 align-top">
-                            <Input {...register(`quotationItems.${index}.AreaPerQuantity`, { valueAsNumber: true })} type="number" step="0.01" placeholder="Area" className="h-10 text-xs" />
+                            <Input {...register(`quotationItems.${index}.AreaPerQuantity`, { valueAsNumber: true })} type="number" step="0.01" placeholder="Area" className="h-10 text-xs bg-gray-200 border" />
                           </TableCell>
                           <TableCell className="p-1 align-top">
                             <Controller
@@ -317,7 +317,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                               name={`quotationItems.${index}.UnitId`}
                               render={({ field }) => (
                                 <Select onValueChange={field.onChange} value={field.value || ''}>
-                                  <SelectTrigger className="h-10 text-xs">
+                                  <SelectTrigger className="h-10 text-xs bg-gray-200 border">
                                     <SelectValue placeholder="Select..." />
                                   </SelectTrigger>
                                   <SelectContent>
@@ -330,7 +330,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
                             />
                           </TableCell>
                           <TableCell className="p-1 align-top">
-                            <Input {...register(`quotationItems.${index}.Rate`, { valueAsNumber: true })} type="number" step="0.01" placeholder="Rate" className="h-10 text-xs" />
+                            <Input {...register(`quotationItems.${index}.Rate`, { valueAsNumber: true })} type="number" step="0.01" placeholder="Rate" className="h-10 text-xs bg-gray-200 border" />
                           </TableCell>
                           <TableCell className="p-1 align-top text-right font-medium text-xs pt-3">{itemTotal.toFixed(2)}</TableCell>
                           <TableCell className="p-1 align-top">
@@ -356,7 +356,7 @@ export function QuotationDialog({ quotation, children, onOpenChange, open: paren
             </div>
           </div>
 
-          <DialogFooter className="px-6 py-4 border-t bg-background">
+          <DialogFooter className="px-6 py-4 border-t bg-white">
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting ? 'Saving...' : 'Save changes'}
             </Button>

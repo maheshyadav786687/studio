@@ -8,6 +8,7 @@ import { z } from 'zod';
 export const StatusSchema = z.object({
   Id: z.string(),
   Name: z.string(),
+  Color: z.string().nullable(),
 });
 export type Status = z.infer<typeof StatusSchema>;
 
@@ -196,7 +197,12 @@ export const QuotationSchema = z.object({
   CompanyId: z.string(),
   StatusId: z.string().nullable(),
   Site: SiteSchema.optional(),
-  quotationItems: z.array(QuotationItemSchema).optional(),
+  Status: StatusSchema.optional(),
+  projectName: z.string().optional(),
+  siteName: z.string().optional(),
+  statusName: z.string().optional(),
+  statusColor: z.string().optional(),
+  QuotationItems: z.array(QuotationItemSchema).optional(),
 });
 export type Quotation = z.infer<typeof QuotationSchema>;
 
