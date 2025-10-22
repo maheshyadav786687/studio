@@ -66,10 +66,19 @@ export async function findQuotationById(id: string): Promise<Quotation | null> {
 
 // DAL function to create a new quotation
 export async function createQuotation(quotationData: QuotationFormData): Promise<Quotation> {
+  const { quotationItems, ...restOfQuotationData } = quotationData;
   const quotation = await prisma.quotation.create({
     data: {
-        ...quotationData,
-        CompanyId: COMPANY_D,
+      ...restOfQuotationData,
+      CompanyId: COMPANY_ID,
+      ...(quotationItems && {
+        QuotationItems: {
+          create: quotationItems.map(item => ({
+            ...item,
+            CompanyId: COMPANY_ID,
+          })),
+        },
+      }),
     },
   });
   return quotation;
@@ -77,16 +86,36 @@ export async function createQuotation(quotationData: QuotationFormData): Promise
 
 // DAL function to update an existing quotation
 export async function updateQuotation(id: string, quotationData: Partial<QuotationFormData>): Promise<Quotation> {
+  const { quotationItems, ...restOfQuotationData } = quotationData;
   const quotation = await prisma.quotation.update({
     where: { Id: id },
-    data: quotationData,
+    data: {
+      ...restOfQuotationData,
+      ...(quotationItems && {
+        QuotationItems: {
+          deleteMany: {},
+          create: quotationItems.map(item => ({
+            ...item,
+            CompanyId: COMPANY_ID,
+          })),
+        },
+      }),
+    },
   });
   return quotation;
 }
 
 // DAL function to delete a quotation
 export async function deleteQuotation(id: string): Promise<void> {
-  await prisma.quotation.delete({
-    where: { Id: id },
-  });
+  // Use a transaction to ensure both operations (deleting items and the quotation) succeed
+  await prisma.$transaction([
+    // Delete all quotation items associated with the quotation
+    prisma.quotationItem.deleteMany({
+      where: { QuotationId: id },
+    }),
+    // Delete the quotation itself
+    prisma.quotation.delete({
+      where: { Id: id },
+    }),
+  ]);
 }

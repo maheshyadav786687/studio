@@ -8,11 +8,12 @@ import { QuotationDialog } from "@/components/quotations/quotation-dialog";
 
 async function getQuotations(): Promise<Quotation[]> {
   try {
-    const { quotations } = await fetchQuotationsFromBll();
-    return quotations;
+    // Ensure that the function returns an empty array if fetching fails or returns no data.
+    const result = await fetchQuotationsFromBll({ all: true });
+    return result?.quotations || [];
   } catch (error) {
     console.error("Error fetching quotations:", error);
-    return []; 
+    return []; // Explicitly return an empty array on error.
   }
 }
 
@@ -38,6 +39,7 @@ export default async function QuotationsPage() {
         </div>
       </div>
       
+      {/* Pass the quotations to the table, ensuring it's never undefined. */}
       <QuotationsTable quotations={quotations} />
 
     </div>
